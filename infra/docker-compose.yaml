@@ -1,0 +1,114 @@
+services:
+  env-dashboard:
+    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
+    ports:
+      - "18888:18888"   # HTTP dashboard
+      - "18889:18889"   # gRPC endpoint
+    networks:
+      - "aspire"
+    restart: "always"
+
+  notification-db:
+    image: "postgres:17.6"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "${NOTIFICATION_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: "notificationdb"
+    ports:
+      - "5432:5432"  # ← expose PostgreSQL to localhost
+    volumes:
+      - drivesolution.apphost-notification-db-data:/var/lib/postgresql/data
+    networks:
+      - "aspire"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@localhost.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - notification-db
+    ports:
+      - "5050:80"  # 👈 expose pgAdmin on localhost:5050
+    networks:
+      - aspire
+
+  rabbitmq:
+    image: "rabbitmq:4.1-management"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQUSER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQPASS:-guest}"
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    volumes:
+      - drivesolution.apphost-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - "aspire"
+
+  cache:
+    image: "redis:7.4"
+    command: ["redis-server", "--requirepass", "${CACHE_PASSWORD:-redispass}"]
+    ports:
+      - "6379:6379"  # ← Redis accessible locally
+    networks:
+      - "aspire"
+
+  api:
+    image: "${API_IMAGE}"
+    environment:
+      ASPNETCORE_URLS: "http://+:3588"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER:-guest}:${RABBITMQPASS:-guest}@rabbitmq:5672"
+      ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "api"
+    ports:
+      - "3588:3588"  # ← Reachable at http://localhost:3588
+    depends_on:
+      - rabbitmq
+      - notification-db
+    networks:
+      - "aspire"
+
+  consumer:
+    image: "${CONSUMER_IMAGE}"
+    environment:
+      ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
+      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER:-guest}:${RABBITMQPASS:-guest}@rabbitmq:5672"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "consumer"
+    depends_on:
+      - rabbitmq
+      - notification-db
+    networks:
+      - "aspire"
+
+  apiservice:
+    image: "${APISERVICE_IMAGE}"
+    environment:
+      ASPNETCORE_URLS: "http://+:3688"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "apiservice"
+    ports:
+      - "3688:3688"  # ← Reachable at http://localhost:3688
+    depends_on:
+      - cache
+    networks:
+      - "aspire"
+
+networks:
+  aspire:
+    driver: "bridge"
+
+volumes:
+  drivesolution.apphost-notification-db-data:
+    driver: "local"
+  drivesolution.apphost-rabbitmq-data:
+    driver: "local"
