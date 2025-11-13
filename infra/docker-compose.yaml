@@ -9,8 +9,8 @@ services:
       - "80:80"
       - "8080:8080"  # The Traefik dashboard
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      
+      - /var/run/docker.sock:/var/run/docker.sock
+
   env-dashboard:
     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
     ports:
