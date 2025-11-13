@@ -81,8 +81,9 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
-    ports:
-      - "3588:3588"  # ← Reachable at http://localhost:3588
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`drivesolution.cloud`)"
     depends_on:
       - rabbitmq
       - notification-db
