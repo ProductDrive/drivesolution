@@ -57,6 +57,9 @@ services:
       - "aspire"
 
   api:
+    build:
+      context: ..
+      dockerfile: "Dockerfile.api"
     image: "${API_IMAGE}"
     environment:
       ASPNETCORE_URLS: "http://+:3588"
@@ -75,6 +78,9 @@ services:
       - "aspire"
 
   consumer:
+    build:
+      context: ..
+      dockerfile: "Dockerfile.consumer"
     image: "${CONSUMER_IMAGE}"
     environment:
       ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
@@ -89,6 +95,9 @@ services:
       - "aspire"
 
   apiservice:
+    build:
+      context: ..
+      dockerfile: "Dockerfile.apiservice"
     image: "${APISERVICE_IMAGE}"
     environment:
       ASPNETCORE_URLS: "http://+:3688"
