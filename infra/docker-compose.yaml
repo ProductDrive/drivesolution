@@ -59,7 +59,7 @@ services:
   api:
     build:
       context: ..
-      dockerfile: "Dockerfile.api.dockerfile"
+      dockerfile: "../DriveSolution.EmailApi/Dockerfile"
     image: "${API_IMAGE}"
     environment:
       ASPNETCORE_URLS: "http://+:3588"
