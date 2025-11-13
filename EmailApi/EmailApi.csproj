@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DriveSolution.ServiceDefaults\DriveSolution.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\NotificationApplication\NotificationApplication.csproj" />
     <ProjectReference Include="..\NotificationDomain\NotificationDomain.csproj" />
   </ItemGroup>
 
