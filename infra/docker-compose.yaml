@@ -94,23 +94,23 @@ services:
     networks:
       - "aspire"
 
-  apiservice:
-    build:
-      context: ..
-      dockerfile: "./DriveSolution.ApiService/Dockerfile"
-    image: "${APISERVICE_IMAGE}"
-    environment:
-      ASPNETCORE_URLS: "http://+:3688"
-      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "apiservice"
-    ports:
-      - "3688:3688"  # ← Reachable at http://localhost:3688
-    depends_on:
-      - cache
-    networks:
-      - "aspire"
+  # apiservice:
+  #   build:
+  #     context: ..
+  #     dockerfile: "./DriveSolution.ApiService/Dockerfile"
+  #   image: "${APISERVICE_IMAGE}"
+  #   environment:
+  #     ASPNETCORE_URLS: "http://+:3688"
+  #     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+  #     OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+  #     OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+  #     OTEL_SERVICE_NAME: "apiservice"
+  #   ports:
+  #     - "3688:3688"  # ← Reachable at http://localhost:3688
+  #   depends_on:
+  #     - cache
+  #   networks:
+  #     - "aspire"
 
 networks:
   aspire:
