@@ -97,7 +97,7 @@ services:
   apiservice:
     build:
       context: ..
-      dockerfile: "./Drivesolution.apiservice/Dockerfile"
+      dockerfile: "./DriveSolution.Apiservice/Dockerfile"
     image: "${APISERVICE_IMAGE}"
     environment:
       ASPNETCORE_URLS: "http://+:3688"
