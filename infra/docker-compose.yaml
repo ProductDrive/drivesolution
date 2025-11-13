@@ -59,7 +59,7 @@ services:
   api:
     build:
       context: ..
-      dockerfile: "Dockerfile.api"
+      dockerfile: "Dockerfile.api.dockerfile"
     image: "${API_IMAGE}"
     environment:
       ASPNETCORE_URLS: "http://+:3588"
