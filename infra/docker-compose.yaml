@@ -2,7 +2,6 @@ services:
   reverse-proxy:
     image: traefik:v3.1
     networks:
-      - "aspire"
       - "proxy"
     restart: "unless-stopped"
     command:
@@ -95,6 +94,7 @@ services:
       - notification-db
     networks:
       - "proxy"
+
 
   consumer:
     build:
