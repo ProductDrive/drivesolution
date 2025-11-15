@@ -3,6 +3,7 @@ services:
     image: traefik:v3.1
     networks:
       - "proxy"
+      - "aspire"
     restart: "unless-stopped"
     command:
       - "--api.insecure=true"
@@ -95,6 +96,7 @@ services:
       - notification-db
     networks:
       - "proxy"
+      - "aspire"
 
 
   consumer:
