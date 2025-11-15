@@ -2,7 +2,7 @@ services:
   reverse-proxy:
     image: traefik:v3.1
     networks:
-      - "proxy"
+      - "aspire"
     restart: "unless-stopped"
     command:
       - "--providers.docker=true"
@@ -93,7 +93,7 @@ services:
       - rabbitmq
       - notification-db
     networks:
-      - "proxy"
+      - "aspire"
 
   consumer:
     build:
@@ -133,8 +133,6 @@ services:
 networks:
   aspire:
     driver: "bridge"
-  proxy:
-    name: "proxy"
 
 volumes:
   drivesolution.apphost-notification-db-data:
