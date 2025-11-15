@@ -136,7 +136,7 @@ networks:
   aspire:
     driver: "bridge"
   proxy:
-    driver: "bridge"
+    name: "proxy"
 
 volumes:
   drivesolution.apphost-notification-db-data:
