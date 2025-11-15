@@ -94,7 +94,6 @@ services:
       - rabbitmq
       - notification-db
     networks:
-      - "aspire"
       - "proxy"
 
   consumer:
