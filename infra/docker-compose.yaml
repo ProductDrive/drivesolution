@@ -2,11 +2,9 @@ services:
   reverse-proxy:
     image: traefik:v3.1
     networks:
-      - "aspire"
       - "proxy"
     restart: "unless-stopped"
     command:
-      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=proxy"
@@ -95,7 +93,6 @@ services:
       - rabbitmq
       - notification-db
     networks:
-      - "aspire"
       - "proxy"
 
   consumer:
