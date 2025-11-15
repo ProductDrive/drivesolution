@@ -3,6 +3,7 @@ services:
     image: traefik:v3.1
     networks:
       - "aspire"
+      - "proxy"
     restart: "unless-stopped"
     command:
       - "--providers.docker=true"
@@ -94,6 +95,7 @@ services:
       - notification-db
     networks:
       - "aspire"
+      - "proxy"
 
   consumer:
     build:
@@ -132,6 +134,8 @@ services:
 
 networks:
   aspire:
+    driver: "bridge"
+  proxy:
     driver: "bridge"
 
 volumes:
