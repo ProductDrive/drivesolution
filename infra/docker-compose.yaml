@@ -88,7 +88,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.infra-api-1.rule=Host(`drivesolution.cloud`)"
-      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.infra-api-1.entrypoints=web"
     depends_on:
       - rabbitmq
       - notification-db
