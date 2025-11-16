@@ -80,7 +80,7 @@ services:
       dockerfile: "./EmailApi/Dockerfile"
     image: "${API_IMAGE}"
     environment:
-      ASPNETCORE_URLS: "http://+:3588"
+      # ASPNETCORE_URLS: "http://+:3588"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER:-guest}:${RABBITMQPASS:-guest}@rabbitmq:5672"
       ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
