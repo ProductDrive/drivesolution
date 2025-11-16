@@ -89,8 +89,8 @@ services:
       OTEL_SERVICE_NAME: "api"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`drivesolution.cloud`)"
-      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.EmailApi.rule=Host(`drivesolution.cloud`)"
+      - "traefik.http.routers.EmailApi.entrypoints=web"
     depends_on:
       - rabbitmq
       - notification-db
