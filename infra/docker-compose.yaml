@@ -7,14 +7,18 @@ services:
     restart: "unless-stopped"
     command:
       - "--api.insecure=true"
-      - "--providers.docker=true"
+      - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certresolver.myresolver.acme.tlschallenge=true"
+      - "--certresolver.myresolver.acme.email=ayoafe@drivesolution.cloud"
+      - "--certresolver.myresolver.acme.storage=/letsencrypt/acme.json"
       - "--providers.docker.network=proxy"
-      - "--entrypoints.web.address=:80"
     ports:
-      - "80:80"
+      - "443:443"
       - "8080:8080" # The Traefik dashboard
     volumes:
+      - letsencrypt:/letsencrypt
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   env-dashboard:
@@ -90,7 +94,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.EmailApi.rule=Host(`drivesolution.cloud`)"
-      - "traefik.http.routers.EmailApi.entrypoints=web"
+      - "traefik.http.routers.EmailApi.entrypoints=websecure"
+      - "traefik.http.routers.EmailApi.tls.certresolver=myresolver"
     depends_on:
       - rabbitmq
       - notification-db
@@ -141,6 +146,7 @@ networks:
     name: "proxy"
 
 volumes:
+  letsencrypt:
   drivesolution.apphost-notification-db-data:
     driver: "local"
   drivesolution.apphost-rabbitmq-data:
