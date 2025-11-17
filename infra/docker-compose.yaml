@@ -89,9 +89,9 @@ services:
       OTEL_SERVICE_NAME: "api"
     # ports:
     #   - "3588:3588"
-    # labels:
+    labels:
     #   - "traefik.enable=true"
-    #   - "traefik.http.routers.EmailApi.rule=Host(`drivesolution.cloud`)"
+      - "traefik.http.routers.api.rule=Host(`drivesolution.cloud`)"
     #   - "traefik.http.routers.EmailApi.entrypoints=websecure"
     #   - "traefik.http.routers.EmailApi.tls.certresolver=myresolver"
     depends_on:
