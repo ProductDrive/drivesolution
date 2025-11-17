@@ -11,7 +11,6 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.address=:80"
       - "--certresolver.myresolver.acme.tlschallenge=true"
-      - "--certresolver.myresolver.acme.email=ayoafe@drivesolution.cloud"
       - "--certresolver.myresolver.acme.storage=/letsencrypt/acme.json"
       - "--providers.docker.network=aspire"
     ports:
