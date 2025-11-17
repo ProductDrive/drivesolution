@@ -8,13 +8,10 @@ services:
       - "--api.insecure=true"
       - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.address=:80"
-      - "--certresolver.myresolver.acme.tlschallenge=true"
-      - "--certresolver.myresolver.acme.storage=/letsencrypt/acme.json"
       - "--providers.docker.network=aspire"
     ports:
-      - "443:443"
+      - "80:80"
       - "8080:8080" # The Traefik dashboard
     volumes:
       - letsencrypt:/letsencrypt
