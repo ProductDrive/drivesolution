@@ -33,9 +33,6 @@ services:
       - "80:80"
       - "443:443"
       - "8080:8080" # The Traefik dashboard
-    volumes:
-      # - letsencrypt:/letsencrypt
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   env-dashboard:
     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
