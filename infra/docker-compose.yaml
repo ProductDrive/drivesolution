@@ -7,14 +7,14 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--providers.docker.network=aspire"
+      # - "--providers.docker.exposedbydefault=false"
+      # - "--entrypoints.web.address=:80"
+      # - "--providers.docker.network=aspire"
     ports:
       - "80:80"
       - "8080:8080" # The Traefik dashboard
     volumes:
-      - letsencrypt:/letsencrypt
+      # - letsencrypt:/letsencrypt
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   env-dashboard:
@@ -87,13 +87,13 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
-    # ports:
-    #   - "3588:3588"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.EmailApi.rule=Host(`drivesolution.cloud`)"
-      - "traefik.http.routers.EmailApi.entrypoints=websecure"
-      - "traefik.http.routers.EmailApi.tls.certresolver=myresolver"
+    ports:
+      - "3588:3588"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.EmailApi.rule=Host(`drivesolution.cloud`)"
+    #   - "traefik.http.routers.EmailApi.entrypoints=websecure"
+    #   - "traefik.http.routers.EmailApi.tls.certresolver=myresolver"
     depends_on:
       - rabbitmq
       - notification-db
