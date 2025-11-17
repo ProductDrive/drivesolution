@@ -80,7 +80,7 @@ services:
       dockerfile: "./EmailApi/Dockerfile"
     image: "${API_IMAGE}"
     environment:
-      ASPNETCORE_URLS: "http://+:3588"
+      # ASPNETCORE_URLS: "http://+:3588"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER:-guest}:${RABBITMQPASS:-guest}@rabbitmq:5672"
       ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
@@ -90,10 +90,11 @@ services:
     # ports:
     #   - "3588:3588"
     labels:
-    #   - "traefik.enable=true"
+      - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`drivesolution.cloud`)"
-    #   - "traefik.http.routers.EmailApi.entrypoints=websecure"
-    #   - "traefik.http.routers.EmailApi.tls.certresolver=myresolver"
+      - "traefik.http.routers.EmailApi.entrypoints=websecure"
+      - "traefik.http.routers.EmailApi.tls.certresolver=myresolver"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
     depends_on:
       - rabbitmq
       - notification-db
