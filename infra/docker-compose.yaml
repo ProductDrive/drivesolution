@@ -31,11 +31,11 @@ services:
 
       # ACME (Let's Encrypt)
       - "--certificatesresolvers.myresolver.acme.httpChallenge.entryPoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=vegiorder@gmail.com"
+      - "${TLS_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
 
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
       - "letsencrypt:/letsencrypt"
     ports:
       - "80:80"
@@ -56,9 +56,9 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "${NOTIFICATION_DB_PASSWORD:-postgres}"
-      POSTGRES_DB: "notificationdb"
+      POSTGRES_USER: "${NOTIFICATION_DB_USER}"
+      POSTGRES_PASSWORD: "${NOTIFICATION_DB_PASSWORD}"
+      POSTGRES_DB: "${NOTIFICATION_DB_NAME}"
     ports:
       - "5432:5432" # ← expose PostgreSQL to localhost
     volumes:
@@ -81,8 +81,8 @@ services:
   rabbitmq:
     image: "rabbitmq:4.1-management"
     environment:
-      RABBITMQ_DEFAULT_USER: "${RABBITMQUSER:-guest}"
-      RABBITMQ_DEFAULT_PASS: "${RABBITMQPASS:-guest}"
+      RABBITMQ_DEFAULT_USER: "${RABBITMQUSER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQPASS}"
     ports:
       - "5672:5672" # AMQP
       - "15672:15672" # Management UI
@@ -93,7 +93,7 @@ services:
 
   cache:
     image: "redis:7.4"
-    command: ["redis-server", "--requirepass", "${CACHE_PASSWORD:-redispass}"]
+    command: ["redis-server", "--requirepass", "${CACHE_PASSWORD}"]
     ports:
       - "6379:6379" # ← Redis accessible locally
     networks:
@@ -107,13 +107,11 @@ services:
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER:-guest}:${RABBITMQPASS:-guest}@rabbitmq:5672"
-      ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
+      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
+      ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
-    # ports:
-    #   - "3588:3588"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`drivesolution.cloud`)"
@@ -130,15 +128,14 @@ services:
     networks:
       - "aspire"
 
-
   consumer:
     build:
       context: ..
       dockerfile: "./NotificationWorker/Dockerfile"
     image: "${CONSUMER_IMAGE}"
     environment:
-      ConnectionStrings__notificationdb: "Host=notification-db;Port=5432;Username=postgres;Password=${NOTIFICATION_DB_PASSWORD:-postgres};Database=notificationdb"
-      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER:-guest}:${RABBITMQPASS:-guest}@rabbitmq:5672"
+      ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
+      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "consumer"
@@ -147,25 +144,6 @@ services:
       - notification-db
     networks:
       - "aspire"
-
-  # apiservice:
-  #   build:
-  #     context: ..
-  #     dockerfile: "./DriveSolution.ApiService/Dockerfile"
-  #   image: "${APISERVICE_IMAGE}"
-  #   environment:
-  #     ASPNETCORE_URLS: "http://+:3688"
-  #     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-  #     OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
-  #     OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-  #     OTEL_SERVICE_NAME: "apiservice"
-  #   ports:
-  #     - "3688:3688"  # ← Reachable at http://localhost:3688
-  #   depends_on:
-  #     - cache
-  #   networks:
-  #     - "aspire"
-
 networks:
   aspire:
     driver: "bridge"
