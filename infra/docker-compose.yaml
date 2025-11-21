@@ -1,4 +1,12 @@
 services:
+  watchtower:
+    image: containrrr/watchtower
+    command:
+      - "--label-enable"
+      - "--interval"
+      - "30"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
   reverse-proxy:
     image: traefik:v3.6.1
     networks:
@@ -112,6 +120,10 @@ services:
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=myresolver"
       - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "com.centurylinklabs.watchtower.enable=true"
+    deploy:
+      mode: replicated
+      replicas: 2
     depends_on:
       - rabbitmq
       - notification-db
