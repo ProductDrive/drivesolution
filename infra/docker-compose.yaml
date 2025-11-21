@@ -5,8 +5,8 @@ services:
       - "aspire"
     restart: "unless-stopped"
     command:
-      # Enable dashboard
-      - "--api.dashboard=true"
+      # Enable dashboard on http
+      - "--api.insecure=true"
 
       # Enable Docker provider
       - "--providers.docker=true"
