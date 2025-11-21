@@ -41,4 +41,10 @@ app.MapPost("/send", async (IPublishEndpoint publishEndpoint, string recipient, 
     return Results.Ok("Notification sent!");
 });
 
+// Minimal API to return a string "site updated"
+app.MapGet("/updates", () =>
+{
+    return Results.Ok("Thanks! App Updated");
+});
+
 app.Run();
