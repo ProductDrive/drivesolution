@@ -418,3 +418,5 @@ FodyWeavers.xsd
 *.msm
 *.msp
 /DriveSolution.ApiService/appsettings.json
+/DriveSolution.AppHost/appsettings.Development.json
+/DriveSolution.AppHost/appsettings.json
