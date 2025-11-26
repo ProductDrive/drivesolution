@@ -39,6 +39,7 @@ app.UseSwaggerUI();
 app.MapPost("notification/email/send/onbehalf", async (IPublishEndpoint publishEndpoint, IOptions<SenderSettingsDTO> fallBackSenderOption, MessageDTO emailMsg) =>
 {
     SenderSettingsDTO fallBackSender = fallBackSenderOption.Value;
+    Console.WriteLine("environment", fallBackSender);
     emailMsg.FallBackSenderSettings = fallBackSender;
     emailMsg.SenderSettings = fallBackSender;
     var isMessageObjectValid = MessageDTOValidator.Validate(emailMsg);
