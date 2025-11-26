@@ -420,3 +420,6 @@ FodyWeavers.xsd
 /DriveSolution.ApiService/appsettings.json
 /DriveSolution.AppHost/appsettings.Development.json
 /DriveSolution.AppHost/appsettings.json
+/EmailApi/appsettings.json
+/EmailApi/appsettings.Development.json
+/NotificationWorker/Decoderr.cs
