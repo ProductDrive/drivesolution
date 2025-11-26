@@ -1,8 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Logging;
 using NotificationDomain;
-using PD.EmailSender.Helpers;
-using static PD.EmailSender.Helpers.SendMail;
 
 namespace NotificationWorker
 {
@@ -19,7 +17,7 @@ namespace NotificationWorker
             var record = new NotificationRecord
             {
                 NotificationType = "Email",
-                Recipient = context.Message.ToContacts,
+                Recipient = context.Message.Contacts.Count>1? $"{context.Message.Contacts.First().Email} and others": $"{context.Message.Contacts.First().Email}",
                 Subject = context.Message.Subject,
                 SourceApp = "EmailApi",
                 SentAt= DateTime.UtcNow,
@@ -29,59 +27,18 @@ namespace NotificationWorker
             await _db.SaveChangesAsync();
 
             var messageObject = context.Message;
-            Console.WriteLine($"📧 Sending email to {messageObject.ToContacts}: {messageObject.Subject}");
+            Console.WriteLine($"📧 Sending email");
 
-            //var (isAuth, mySenderSettings) = await SendMail.AuthenticateSenderDomain("aafe@projectdriveng.com.ng", "");
-            //var (isAuth, mySenderSettings) = await SendMail.AuthenticateSenderDomain("afee@productdrive.com.ng", "");
-            //if (isAuth)
-            //{
-            //    messageObject.SenderSettings.Email = mySenderSettings.Email;
-            //    messageObject.SenderSettings.Port = mySenderSettings.Port;
-            //    messageObject.SenderSettings.Password = mySenderSettings.Password;
-            //    messageObject.SenderSettings.Domain = mySenderSettings.Domain;
-            //}
-
-            var getRecord = Decoderr.GetMailAccounts().FirstOrDefault(x => x.Email == "aafe@projectdriveng.com.ng");
-            if (getRecord != null)
+            if (messageObject.SenderSettings.OnBehalf)
             {
-                messageObject.SenderSettings.Domain = getRecord.Domain;
-                messageObject.SenderSettings.Password = Decoderr.DecryptPassword(getRecord.Password);
-                messageObject.SenderSettings.Email = getRecord.Email;
-                messageObject.SenderSettings.Port = getRecord.Port;
-
+                messageObject.SenderSettings = messageObject.FallBackSenderSettings;
+                var sent = EmailEngine.SendEmail(messageObject);
+            }
+            else
+            {
+                
             }
 
-            bool res = SendMail.SendSingleEmail(
-                new PD.EmailSender.Helpers.Model.MessageModel()
-                {
-                    AttachmentInCode = messageObject.AttachmentInCode,
-                    Bcc = messageObject.Bcc,
-                    Cc = messageObject.Cc,
-                    CompanyLogoLink = messageObject.CompanyLogoLink,
-                    CopyrightName = messageObject.CopyrightName,
-                    CopyrightYear = messageObject.CopyrightYear,
-                    EmailAddresses = messageObject.EmailAddresses,
-                    EmailDisplayName = messageObject.EmailDisplayName,
-                    FacebookLink = messageObject.FacebookLink,
-                    Filename = messageObject.Filename,
-                    Message = messageObject.Message,
-                    ReplyTo = messageObject.ReplyTo,
-                    Subject = messageObject.Subject,
-                    TwitterLink = messageObject.TwitterLink,
-                    User = messageObject.User
-                },
-                new SenderSettings
-                {
-                    Email = messageObject.SenderSettings.Email,
-                    Port = messageObject.SenderSettings.Port,
-                    Password = messageObject.SenderSettings.Password,
-                    Domain = messageObject.SenderSettings.Domain
-                }
-            );
-            if (res)
-            {
-                Console.WriteLine($"📧 Email sent to {messageObject.ToContacts}: {messageObject.Subject}");
-            }
 
             await Task.CompletedTask;
         }
