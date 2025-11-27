@@ -42,6 +42,10 @@ app.MapPost("notification/email/send/onbehalf", async (IPublishEndpoint publishE
     Console.WriteLine("environment", fallBackSender);
     emailMsg.FallBackSenderSettings = fallBackSender;
     emailMsg.SenderSettings = fallBackSender;
+    if (fallBackSender != null)
+    {
+        return Results.Ok(fallBackSender);
+    }
     var isMessageObjectValid = MessageDTOValidator.Validate(emailMsg);
     if (isMessageObjectValid.IsValid)
     {
