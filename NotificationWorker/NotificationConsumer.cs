@@ -16,16 +16,7 @@ namespace NotificationWorker
         {
             try
             {
-                var record = new NotificationRecord
-                    {
-                        NotificationType = "Email",
-                        Recipient = context.Message.Contacts.Count>1? $"{context.Message.Contacts.First().Email} and others": $"{context.Message.Contacts.First().Email}",
-                        Subject = context.Message.Subject,
-                        SourceApp = "EmailApi",
-                        SentAt= DateTime.UtcNow,
-                    };
-                _db.Notifications.Add(record);
-                await _db.SaveChangesAsync();
+                
                 var messageObject = context.Message;
                 Console.WriteLine($"📧 Sending email");
 
@@ -42,9 +33,19 @@ namespace NotificationWorker
                 await Task.CompletedTask;
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                var record = new NotificationRecord
+                {
+                    NotificationType = "Email",
+                    Exception = ex.InnerException?.Message ?? ex.Message,
+                    Recipient = context.Message.Contacts.Count > 1 ? $"{context.Message.Contacts.First().Email} and others" : $"{context.Message.Contacts.First().Email}",
+                    Subject = context.Message.Subject,
+                    SourceApp = "EmailApi",
+                    SentAt = DateTime.UtcNow,
+                };
+                _db.Notifications.Add(record);
+                await _db.SaveChangesAsync();
             }
                         
         }
