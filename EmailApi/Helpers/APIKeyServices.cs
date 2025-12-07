@@ -1,39 +1,34 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
 using NotificationDomain;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace EmailApi.Helpers
 {
     public class APIKeyServices
-    {
-        
-        
-        public async Task<string> GeneratePublicKey(Secrets secreteProperties, SenderSettingsDTO senderSettings)
+    { 
+        public string GeneratePublicKey(Secrets secreteProperties, SenderSettingsDTO senderSettings)
         {
-            //string joiner = "#joi#ner#";
-            string joiner = await CSharpScript.EvaluateAsync<string>(secreteProperties.ExecZero);
             StringBuilder sb = new StringBuilder();
-            sb.Append(await EncryptData(senderSettings.Domain, secreteProperties));
-            sb.Append(joiner);
-            sb.Append(await EncryptData(senderSettings.Email, secreteProperties));
-            sb.Append(joiner);
-            sb.Append(await EncryptData(senderSettings.Port.ToString(), secreteProperties));
-            sb.Append(joiner);
-            sb.Append(await EncryptData(senderSettings.Password, secreteProperties));
+            sb.Append(EncryptData(senderSettings.Domain, secreteProperties));
+            sb.Append(secreteProperties.ExecZero);
+            sb.Append(EncryptData(senderSettings.Email, secreteProperties));
+            sb.Append(secreteProperties.ExecZero);
+            sb.Append(EncryptData(senderSettings.Port.ToString(), secreteProperties));
+            sb.Append(secreteProperties.ExecZero);
+            sb.Append(EncryptData(senderSettings.Password, secreteProperties));
 
             return sb.ToString();
         }
 
 
-        public async Task<SenderSettingsDTO> RetrieveSenderSettings(Secrets secreteProperties, string publicKey)
+        public SenderSettingsDTO RetrieveSenderSettings(Secrets secreteProperties, string publicKey)
         {
             if (string.IsNullOrWhiteSpace(publicKey))
             {
                 return new SenderSettingsDTO();
             }
-            var spliter = await CSharpScript.EvaluateAsync<string>(secreteProperties.ExecZero);
+            var spliter = secreteProperties.ExecZero;
             var splitedKey = publicKey.Split(spliter).ToList();
             if (splitedKey.Count < 4)
             {
@@ -51,48 +46,35 @@ namespace EmailApi.Helpers
             return senderSettings;
         }
 
-        public async Task<string> EncryptData(string password, Secrets secreteProp)
+        private string EncryptData(string password, Secrets secreteProp)
         {
             //====Encryption Algorithm========
             string randomstring = RandomStringGen(secreteProp.ExecOne, secreteProp.GetRandomGenSecrete);
-            
             string passStr = "";
             for (int i = 0; i < password.Length; i++)
             {
                 char c = password[i];
                 int foundInd = Array.IndexOf((secreteProp.GetCharModel).ToCharArray(), c);
-                var exGlobals = new ExecGlobals()
-                {
-                    X = passStr,
-                    Y = secreteProp.GetReversedCharModel,
-                    C = c
-                };
-
                 if (foundInd > -1)
                 {
-                    exGlobals.Z = secreteProp.GetReversedCharModel[foundInd].ToString();
-                    passStr = await CSharpScript.EvaluateAsync<string>(secreteProp.ExecTwo, globals: exGlobals);
+                    passStr += secreteProp.GetReversedCharModel[foundInd];
                 }
                 else
                 {
-                    
-                    if (await CSharpScript.EvaluateAsync<bool>(secreteProp.ExecThree, globals:exGlobals))
+                    if (c == secreteProp.ExecThree)
                     {
                         passStr += secreteProp.ExecFour;
                     }
                     else
                     {
-                        passStr = await CSharpScript.EvaluateAsync<string>(secreteProp.ExecFive, globals:exGlobals);
-                    }
 
+                        passStr += c;
+                    }
                 }
             }
-
-            var cLog = await CSharpScript.EvaluateAsync<int>(secreteProp.CutLogic);
-            var exSix = new ExecGlobals(){ L = randomstring.Substring(0, cLog), M = passStr, R = randomstring.Substring(cLog), W = randomstring };
-            string newString = await CSharpScript.EvaluateAsync<string>(secreteProp.ExecSix, globals:exSix);
-            string passlen = password.Length > (cLog-secreteProp.TrimLogic) ? password.Length.ToString() : $"0{password.Length}";
-            string trimmed = newString.Remove(newString.Length - 2, secreteProp.TrimLogic);
+            string newString = randomstring.Insert(secreteProp.ExecTwo, passStr);
+            string passlen = password.Length > (secreteProp.CutLogic - secreteProp.TrimLogic) ? password.Length.ToString() : $"0{password.Length}";
+            string trimmed = newString.Remove(newString.Length - secreteProp.TrimLogic, 2);
             trimmed += passlen;
             return trimmed;
         }
@@ -108,11 +90,10 @@ namespace EmailApi.Helpers
             {
                 var charModel = secreteOptions.GetCharModel;
                 var reverseCharModel = secreteOptions.GetReversedCharModel;
-
                 //=====Decryption Algorithm====
-                string resEnPass = enPass.Replace("#PdR#", "@");
-                int passLen = Convert.ToInt32(resEnPass.Substring(resEnPass.Length - 2, 2));
-                string hashStr = resEnPass.Substring(11, passLen);
+                string resEnPass = enPass.Replace(secreteOptions.ExecFour, secreteOptions.ExecThree.ToString());
+                int passLen = Convert.ToInt32(resEnPass.Substring(resEnPass.Length - secreteOptions.TrimLogic, 2));
+                string hashStr = resEnPass.Substring(secreteOptions.CutLogic, passLen);
                 string passStr = "";
                 for (int i = 0; i < passLen; i++)
                 {
@@ -177,13 +158,13 @@ namespace EmailApi.Helpers
         public string GetRandomGenSecrete { get; set; } = string.Empty;
         public string ExecZero { get; set; } = string.Empty;
         public int ExecOne { get; set; }
-        public string ExecTwo { get; set; } = string.Empty;
-        public string ExecThree { get; set; } = string.Empty;
+        public int ExecTwo { get; set; }
+        public char ExecThree { get; set; }
         public string ExecFour { get; set; } = string.Empty;
         public string ExecFive { get; set; } = string.Empty;
         public string ExecSix { get; set; } = string.Empty;
         public int TrimLogic { get; set; }
-        public string CutLogic { get; set; } = string.Empty;
+        public int CutLogic { get; set; }
     }
 
     public class ExecGlobals

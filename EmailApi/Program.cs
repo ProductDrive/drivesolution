@@ -73,7 +73,7 @@ app.MapPost("notification/email/send", async (IPublishEndpoint publishEndpoint, 
 
     APIKeyServices aPIKeyServices = new APIKeyServices();
     emailMsg.FallBackSenderSettings = fallBackSenderOption.Value;
-    var decodedSender = await aPIKeyServices.RetrieveSenderSettings(SecretesOption.Value, emailMsg.SenderSettings.PublicKey);
+    var decodedSender = aPIKeyServices.RetrieveSenderSettings(SecretesOption.Value, emailMsg.SenderSettings.PublicKey);
     if (!SenderSettingsValidator.Validate(decodedSender).IsValid)
     {
         return Results.BadRequest("Invalid Public Key");
@@ -94,14 +94,13 @@ app.MapPost("notification/email/send", async (IPublishEndpoint publishEndpoint, 
     }
 });
 
-app.MapPost("notification/email/getapikey", async (IOptions<Secrets> SecretesOption, SenderSettingsDTO senderSettings) =>
+app.MapPost("notification/email/getapikey", (IOptions<Secrets> SecretesOption, SenderSettingsDTO senderSettings) =>
 {
-    APIKeyServices aPIKeyServices = new APIKeyServices();
-    var publickey = await aPIKeyServices.GeneratePublicKey(SecretesOption.Value, senderSettings);
-    
     var isSenderObjectValid = SenderSettingsValidator.Validate(senderSettings);
     if (isSenderObjectValid.IsValid)
     {
+        APIKeyServices aPIKeyServices = new APIKeyServices();
+        var publickey = aPIKeyServices.GeneratePublicKey(SecretesOption.Value, senderSettings);
         return Results.Ok(publickey);
     }
     else
