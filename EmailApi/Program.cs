@@ -59,8 +59,6 @@ app.MapPost("notification/email/send/onbehalf", async (IPublishEndpoint publishE
     {
         return Results.BadRequest(isMessageObjectValid);
     }
-
-
 });
 
 

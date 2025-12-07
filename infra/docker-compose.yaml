@@ -130,7 +130,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
     depends_on:
       - rabbitmq
       - notification-db
