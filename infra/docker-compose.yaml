@@ -117,7 +117,7 @@ services:
       Secretes__ExecFive: "${Secretes_ExecFive}"
       Secretes__ExecSix: "${Secretes_ExecSix}"
       Secretes__TrimLogic: "${Secretes_TrimLogic}"
-      Secretes_CutLogic: "${Secretes_CutLogic}"
+      Secretes__CutLogic: "${Secretes_CutLogic}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
