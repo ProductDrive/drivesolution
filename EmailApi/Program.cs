@@ -75,7 +75,7 @@ app.MapPost("notification/email/send", async (IPublishEndpoint publishEndpoint, 
     if (!SenderSettingsValidator.Validate(decodedSender).IsValid)
     {
         decodedSender.PublicKey = "Invalid key";
-        return Results.BadRequest(decodedSender);
+        return Results.BadRequest(new {secreteUsed= SecretesOption.Value, decoded = decodedSender});
     }
     emailMsg.SenderSettings = decodedSender;
     var isMessageObjectValid = MessageDTOValidator.Validate(emailMsg);
