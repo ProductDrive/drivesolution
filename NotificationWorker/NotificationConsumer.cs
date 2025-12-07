@@ -27,7 +27,7 @@ namespace NotificationWorker
                 }
                 else
                 {
-
+                    var sent = EmailEngine.SendEmail(messageObject);
                 }
 
                 await Task.CompletedTask;
