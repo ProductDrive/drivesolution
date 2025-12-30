@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using NotificationDomain;
 using System.Security.Cryptography.X509Certificates;
+using static MassTransit.Logging.DiagnosticHeaders.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -26,10 +27,15 @@ builder.Services.AddMassTransit(x =>
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
-        cfg.Host(rabbitConn, h =>
+        var rabuser = builder.Configuration["RABBITMQUSER"];
+        var rabpas = builder.Configuration["RABBITMQPASS"];
+        ;
+        cfg.Host("rabbitmq",
+            "/",
+            h =>
         {
-            h.Username("rabbitmqUser");
-            h.Password("rabbitmqPass");
+            h.Username(rabuser);
+            h.Password(rabpas);
         });
     });
 });

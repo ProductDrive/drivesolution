@@ -1,4 +1,4 @@
-﻿using Aspire.Hosting;
+using Aspire.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -34,5 +34,7 @@ builder.AddProject<Projects.NotificationWorker>("consumer")
 var cache = builder.AddRedis("cache");
 var apiService = builder.AddProject<Projects.DriveSolution_ApiService>("apiservice")
                         .WithReference(cache);
+
+builder.AddProject<Projects.BirthdayReminder>("birthdayreminder");
 
 builder.Build().Run();

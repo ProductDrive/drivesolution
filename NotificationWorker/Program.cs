@@ -39,11 +39,16 @@ builder.Services.AddMassTransit(x =>
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
-        cfg.Host(rabbitConn, h =>
-        {
-            h.Username("rabbitmqUser");
-            h.Password("rabbitmqPass");
-        });
+        var rabuser = builder.Configuration["RABBITMQUSER"];
+        var rabpas = builder.Configuration["RABBITMQPASS"];
+        ;
+        cfg.Host("rabbitmq",
+            "/",
+            h =>
+            {
+                h.Username(rabuser);
+                h.Password(rabpas);
+            });
 
         cfg.ReceiveEndpoint("notification-queue", e =>
         {

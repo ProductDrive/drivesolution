@@ -6,7 +6,7 @@ services:
     restart: "unless-stopped"
     command:
       # Enable dashboard on http
-      - "--api.insecure=true"
+      - "--api.insecure=false"
 
       # Enable Docker provider
       - "--providers.docker=true"
@@ -37,8 +37,8 @@ services:
   env-dashboard:
     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
     ports:
-      - "18888:18888" # HTTP dashboard
-      - "18889:18889" # gRPC endpoint
+      - "41324:41324" # HTTP dashboard
+      - "41321:41321" # gRPC endpoint
     networks:
       - "aspire"
     restart: "always"
@@ -58,48 +58,48 @@ services:
     networks:
       - "aspire"
 
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@localhost.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    depends_on:
-      - notification-db
-    ports:
-      - "5050:80" # 👈 expose pgAdmin on localhost:5050
-    networks:
-      - aspire
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@localhost.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   depends_on:
+  #     - notification-db
+  #   ports:
+  #     - "5050:80" # 👈 expose pgAdmin on localhost:5050
+  #   networks:
+  #     - aspire
 
   rabbitmq:
     image: "rabbitmq:4.1-management"
     environment:
       RABBITMQ_DEFAULT_USER: "${RABBITMQUSER}"
       RABBITMQ_DEFAULT_PASS: "${RABBITMQPASS}"
-    ports:
-      - "5672:5672" # AMQP
-      - "15672:15672" # Management UI
+    # ports:
+    #   - "5672:5672" # AMQP
+    #   - "15672:15672" # Management UI
     volumes:
       - drivesolution.apphost-rabbitmq-data:/var/lib/rabbitmq
     networks:
       - "aspire"
 
-  cache:
-    image: "redis:7.4"
-    command: ["redis-server", "--requirepass", "${CACHE_PASSWORD}"]
-    ports:
-      - "6379:6379" # ← Redis accessible locally
-    networks:
-      - "aspire"
+  # cache:
+  #   image: "redis:7.4"
+  #   command: ["redis-server", "--requirepass", "${CACHE_PASSWORD}"]
+  #   ports:
+  #     - "6379:6379" # ← Redis accessible locally
+  #   networks:
+  #     - "aspire"
 
   api:
-    build:
-      context: ..
-      dockerfile: "./EmailApi/Dockerfile"
     image: "${API_IMAGE}"
+    restart: unless-stopped
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
+      RABBITMQUSER: "${RABBITMQUSER}"
+      RABBITMQPASS: "${RABBITMQPASS}"
+      # ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
       ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
       EmailSuperSender__Domain: "${Sender_Domain}"
       EmailSuperSender__Port: "${Sender_Port}"
@@ -130,7 +130,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
     depends_on:
       - rabbitmq
       - notification-db
@@ -138,13 +138,12 @@ services:
       - "aspire"
 
   consumer:
-    build:
-      context: ..
-      dockerfile: "./NotificationWorker/Dockerfile"
     image: "${CONSUMER_IMAGE}"
     environment:
       ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
-      ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
+      # ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
+      RABBITMQUSER: "${RABBITMQUSER}"
+      RABBITMQPASS: "${RABBITMQPASS}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "consumer"

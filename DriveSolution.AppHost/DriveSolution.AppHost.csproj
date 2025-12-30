@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BirthdayReminder\BirthdayReminder.csproj" />
     <ProjectReference Include="..\DriveSolution.ApiService\DriveSolution.ApiService.csproj" />
     <ProjectReference Include="..\DriveSolution.Web\DriveSolution.Web.csproj" />
     <ProjectReference Include="..\EmailApi\EmailApi.csproj" />
