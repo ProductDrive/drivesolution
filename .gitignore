@@ -423,3 +423,4 @@ FodyWeavers.xsd
 /EmailApi/appsettings.json
 /EmailApi/appsettings.Development.json
 /NotificationWorker/Decoderr.cs
+/BirthdayReminder/Jobstore/afebdayrem-firebase-adminsdk-fbsvc-83c5702430.json
