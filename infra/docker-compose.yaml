@@ -137,6 +137,29 @@ services:
     networks:
       - "aspire"
 
+  birthday-api:
+    image: "${BIRTHDAY_API_IMAGE}"
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "birthday-api"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.birthday-api.rule=Host(`birthday.drivesolution.cloud`)"
+      - "traefik.http.routers.birthday-api.entrypoints=websecure"
+      - "traefik.http.routers.birthday-api.tls.certresolver=myresolver"
+      - "traefik.http.services.birthday-api.loadbalancer.server.port=8080"
+      - "com.centurylinklabs.watchtower.enable=true"
+    deploy:
+      mode: replicated
+      replicas: 1
+    networks:
+      - "aspire"
+
   consumer:
     image: "${CONSUMER_IMAGE}"
     environment:

@@ -98,6 +98,7 @@ namespace BirthdayReminder.Implementations
             //convert return object to dictionary   
             var celebrantsByEmail = (Dictionary<string, List<Celebrant>>)model.ReturnObj;
             List<MessageModel> messages = new();
+            var displayName = new List<string>();
 
             foreach (var entry in celebrantsByEmail)
             {
@@ -121,7 +122,7 @@ namespace BirthdayReminder.Implementations
                 {
                     continue; // skip if no celebrants for today or tomorrow
                 }
-
+                displayName.AddRange(celebrants.Select(x => x.Name));
                 var plural = celebrants.Count > 1 ? "s" : "";
                 var subject = today ? $"Reminder: {celebrants.Count} Birthday{plural} TODAY!" : $"Reminder: {celebrants.Count} Birthday{plural} Coming Up Tomorrow";
 
@@ -142,10 +143,17 @@ namespace BirthdayReminder.Implementations
                 messageDTO.Contacts  = new List<ContactsModel> { new ContactsModel { Email = email } };
                 messageDTO.Subject = subject;
                 messageDTO.Message = sb.ToString();
-                messageDTO.EmailDisplayName = "Drive Birthday Reminder";
-
+                if (displayName.Count > 1)
+                {
+                    messageDTO.EmailDisplayName = $"{String.Join(',', displayName.Take(2))}... Birthdays";
+                }
+                if (displayName.Count == 1)
+                {
+                    messageDTO.EmailDisplayName = $"{displayName[0]}'s Birthday";
+                }
                 messages.Add(messageDTO);
             }
+            
             return messages;
 
         }
@@ -161,7 +169,7 @@ namespace BirthdayReminder.Implementations
                 foreach (var item in messageModels)
                 {
                     item.SenderSettings.OnBehalf = true;
-                    item.EmailDisplayName = "Birthday Reminder for PRODUCTDRIVE";
+                    item.EmailDisplayName =   item.EmailDisplayName;
                     await SendMailVTwo.SendSingleEmailOnBehalf(item);
                 }
                 return new ResponseModel { Status = true, Response = "Email sent" };
