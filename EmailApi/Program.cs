@@ -11,6 +11,17 @@ builder.AddServiceDefaults();
 // 1️⃣ Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//Add Cors policy
+builder.Services.AddCors(options =>
+    options.AddPolicy("EmailsCorsPolicy", policy =>
+    {
+        policy.AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowAnyOrigin();
+    })
+);
+
 builder.Services.AddOptions<SenderSettingsDTO>()
     .BindConfiguration("EmailSuperSender")
     .ValidateDataAnnotations()
@@ -41,6 +52,7 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+app.UseCors("EmailsCorsPolicy");
 
 // 3️⃣ Enable Swagger middleware
 
