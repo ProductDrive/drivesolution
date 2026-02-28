@@ -14,5 +14,6 @@ namespace NotificationWorker
             : base(options) { }
 
         public DbSet<NotificationRecord> Notifications => Set<NotificationRecord>();
+        public DbSet<BirthdaySubscription> BirthdaySubscriptions => Set<BirthdaySubscription>();
     }
 }

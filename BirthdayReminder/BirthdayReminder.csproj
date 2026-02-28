@@ -9,11 +9,13 @@
   <ItemGroup>
     <PackageReference Include="Afe.PRD.Email.Sender" Version="3.0.0" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.1.0" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DriveSolution.ServiceDefaults\DriveSolution.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\NotificationDomain\NotificationDomain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
