@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
 namespace NotificationDomain
 {
     public class BirthdaySubscription
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string CelebrantId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public int BirthDay { get; set; }
@@ -20,7 +21,8 @@ namespace NotificationDomain
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Convenience accessors
+        // Convenience accessor
+        [NotMapped]
         public List<string> NotificationTypes
         {
             get => string.IsNullOrWhiteSpace(NotificationTypesJson) 
@@ -28,7 +30,7 @@ namespace NotificationDomain
                 : JsonSerializer.Deserialize<List<string>>(NotificationTypesJson) ?? new List<string>();
             set => NotificationTypesJson = JsonSerializer.Serialize(value ?? new List<string>());
         }
-
+        [NotMapped]
         public List<string> NotifyTimes
         {
             get => string.IsNullOrWhiteSpace(NotifyTimesJson) 

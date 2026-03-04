@@ -23,27 +23,27 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
+        //var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
         var rabuser = builder.Configuration["RABBITMQUSER"];
         var rabpas = builder.Configuration["RABBITMQPASS"];
 
-        if (!string.IsNullOrWhiteSpace(rabbitConn))
-        {
-            // if you provide a full amqp URI in configuration
-            cfg.Host(new Uri(rabbitConn), h =>
-            {
-                if (!string.IsNullOrWhiteSpace(rabuser)) h.Username(rabuser);
-                if (!string.IsNullOrWhiteSpace(rabpas)) h.Password(rabpas);
-            });
-        }
-        else
-        {
+        //if (!string.IsNullOrWhiteSpace(rabbitConn))
+        //{
+        //    // if you provide a full amqp URI in configuration
+        //    cfg.Host(new Uri(rabbitConn), h =>
+        //    {
+        //        if (!string.IsNullOrWhiteSpace(rabuser)) h.Username(rabuser);
+        //        if (!string.IsNullOrWhiteSpace(rabpas)) h.Password(rabpas);
+        //    });
+        //}
+        //else
+        //{
             cfg.Host("rabbitmq", "/", h =>
             {
                 h.Username(rabuser);
                 h.Password(rabpas);
             });
-        }
+        //}
 
         // Separate endpoints for clearer routing and scaling
         cfg.ReceiveEndpoint("notification-queue", e =>

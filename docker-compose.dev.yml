@@ -1,0 +1,147 @@
+# services:
+#   env-dashboard:
+#     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
+#     ports:
+#       - "41324:41324" # HTTP dashboard
+#       - "41321:41321" # gRPC endpoint
+#     networks:
+#       - "aspire"
+#     restart: "always"
+
+#   notification-db:
+#     image: "postgres:17.6"
+#     environment:
+#       POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+#       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+#       POSTGRES_USER: "${NOTIFICATION_DB_USER}"
+#       POSTGRES_PASSWORD: "${NOTIFICATION_DB_PASSWORD}"
+#       POSTGRES_DB: "${NOTIFICATION_DB_NAME}"
+#     ports:
+#       - "5432:5432" # ← expose PostgreSQL to localhost
+#     volumes:
+#       - drivesolution.apphost-notification-db-data:/var/lib/postgresql/data
+#     networks:
+#       - "aspire"
+
+#   pgadmin:
+#     image: dpage/pgadmin4
+#     environment:
+#       PGADMIN_DEFAULT_EMAIL: admin@localhost.com
+#       PGADMIN_DEFAULT_PASSWORD: admin
+#     depends_on:
+#       - notification-db
+#     ports:
+#       - "5050:80" # 👈 expose pgAdmin on localhost:5050
+#     networks:
+#       - aspire
+
+#   rabbitmq:
+#     image: "rabbitmq:4.1-management"
+#     environment:
+#       RABBITMQ_DEFAULT_USER: "${RABBITMQUSER}"
+#       RABBITMQ_DEFAULT_PASS: "${RABBITMQPASS}"
+#     ports:
+#       - "5672:5672" # AMQP
+#       - "15672:15672" # Management UI
+#     volumes:
+#       - drivesolution.apphost-rabbitmq-data:/var/lib/rabbitmq
+#     networks:
+#       - "aspire"
+
+#   # cache:
+#   #   image: "redis:7.4"
+#   #   command: ["redis-server", "--requirepass", "${CACHE_PASSWORD}"]
+#   #   ports:
+#   #     - "6379:6379" # ← Redis accessible locally
+#   #   networks:
+#   #     - "aspire"
+
+#   api:
+#     build:
+#       context: .
+#       dockerfile: EmailApi/Dockerfile.dev
+#     image: api-local
+#     restart: unless-stopped
+#     environment:
+#       ASPNETCORE_URLS: "http://+:8080"
+#       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+#       RABBITMQUSER: "${RABBITMQUSER}"
+#       RABBITMQPASS: "${RABBITMQPASS}"
+#       # ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
+#       ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
+#       EmailSuperSender__Domain: "${Sender_Domain}"
+#       EmailSuperSender__Port: "${Sender_Port}"
+#       EmailSuperSender__Email: "${Sender_Email}"
+#       EmailSuperSender__Password: "${Sender_Password}"
+#       EmailSuperSender__PublicKey: "${Sender_PublicKey}"
+#       Secretes__GetCharModel: "${Secretes_GetCharModel}"
+#       Secretes__GetReversedCharModel: "${Secretes_GetReversedCharModel}"
+#       Secretes__GetRandomGenSecrete: "${Secretes_GetRandomGenSecrete}"
+#       Secretes__ExecZero: "${Secretes_ExecZero}"
+#       Secretes__ExecOne: "${Secretes_ExecOne}"
+#       Secretes__ExecTwo: "${Secretes_ExecTwo}"
+#       Secretes__ExecThree: "${Secretes_ExecThree}"
+#       Secretes__ExecFour: "${Secretes_ExecFour}"
+#       Secretes__ExecFive: "${Secretes_ExecFive}"
+#       Secretes__ExecSix: "${Secretes_ExecSix}"
+#       Secretes__TrimLogic: "${Secretes_TrimLogic}"
+#       Secretes__CutLogic: "${Secretes_CutLogic}"
+#       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+#       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+#       OTEL_SERVICE_NAME: "api"
+#     ports:
+#       - "5000:8080"
+#     depends_on:
+#       - rabbitmq
+#       - notification-db
+#     networks:
+#       - "aspire"
+
+#   birthday-api:
+#     build:
+#       context: .
+#       dockerfile:  BirthdayReminder/DockerFile
+#     image: birthday-local
+#     restart: unless-stopped
+#     environment:
+#       ASPNETCORE_URLS: "http://+:8080"
+#       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+#       ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
+#       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+#       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+#       OTEL_SERVICE_NAME: "birthday-api"
+#       RABBITMQUSER: "${RABBITMQUSER}"
+#       RABBITMQPASS: "${RABBITMQPASS}"
+#     ports:
+#       - "5002:8080"
+#     networks:
+#       - "aspire"
+
+#   consumer:
+#     build:
+#       context: .
+#       dockerfile: NotificationWorker/Dockerfile
+#     image: consumer-local
+#     environment:
+#       ConnectionStrings__notificationdb: "Host=${NOTIFICATION_DB_HOST};Port=${NOTIFICATION_DB_PORT};Username=${NOTIFICATION_DB_USER};Password=${NOTIFICATION_DB_PASSWORD};Database=${NOTIFICATION_DB_NAME}"
+#       # ConnectionStrings__rabbitmq: "amqp://${RABBITMQUSER}:${RABBITMQPASS}@rabbitmq:5672"
+#       RABBITMQUSER: "${RABBITMQUSER}"
+#       RABBITMQPASS: "${RABBITMQPASS}"
+#       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+#       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+#       OTEL_SERVICE_NAME: "consumer"
+#     depends_on:
+#       - rabbitmq
+#       - notification-db
+#     networks:
+#       - "aspire"
+# networks:
+#   aspire:
+#     driver: "bridge"
+
+# volumes:
+#   letsencrypt:
+#   drivesolution.apphost-notification-db-data:
+#     driver: "local"
+#   drivesolution.apphost-rabbitmq-data:
+#     driver: "local"

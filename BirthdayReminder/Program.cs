@@ -1,8 +1,10 @@
+using BirthdayReminder.Data;
 using BirthdayReminder.Implementations;
 using BirthdayReminder.interfaces;
 using BirthdayReminder.Models;
 using MassTransit;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using NotificationDomain;
 using PD.EmailSender.Helpers.Model;
 
@@ -28,19 +30,27 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IFirebaseStoreService, FirebaseStoreService>();
 
+// Register local NotificationDbContext pointing to the same Postgres used by the worker
+var notificationConn = builder.Configuration.GetConnectionString("notificationdb");
+if (!string.IsNullOrWhiteSpace(notificationConn))
+{
+    //builder.Services.AddDbContext<NotificationDbContext>(options => options.UseNpgsql(notificationConn));
+    builder.AddNpgsqlDbContext<NotificationDbContext>("notificationdb");
+}
+
 // MassTransit with RabbitMQ - matches EmailApi setup
 builder.Services.AddMassTransit(x =>
 {
     x.UsingRabbitMq((context, cfg) =>
     {
-        var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
+        //var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
         var rabuser = builder.Configuration["RABBITMQUSER"];
         var rabpas = builder.Configuration["RABBITMQPASS"];
 
         cfg.Host("rabbitmq", "/", h =>
         {
             h.Username(rabuser);
-            h.Password(rabpas);
+            h.Password(rabpas); 
         });
     });
 });
@@ -97,7 +107,35 @@ app.MapPost("/api/birthdays/subscribe", async (SubscriptionRequest req, IPublish
     return Results.Accepted("Subscription received and queued for processing");
 });
 
-app.MapGet("/testapi", async (IFirebaseStoreService firebaseStore) =>
+// New endpoint: GET /api/birthdays/subscription/{celebrantId}
+app.MapGet("/api/birthdays/subscription/{celebrantId}", async (string celebrantId, NotificationDbContext db) =>
+{
+    if (string.IsNullOrWhiteSpace(celebrantId))
+        return Results.BadRequest("celebrantId is required");
+
+    var sub = await db.BirthdaySubscriptions
+                      .AsNoTracking()
+                      .FirstOrDefaultAsync(s => s.CelebrantId == celebrantId);
+
+    if (sub == null)
+        return Results.NotFound();
+
+    var result = new
+    {
+        sub.Id,
+        sub.CelebrantId,
+        sub.Name,
+        sub.BirthDay,
+        sub.BirthMonth,
+        NotificationTypes = sub.NotificationTypes,
+        NotifyTimes = sub.NotifyTimes,
+        sub.CreatedAt
+    };
+
+    return Results.Ok(result);
+});
+
+app.MapGet("/testapi", () =>
 {
     return Results.Ok("Hit success");
 });

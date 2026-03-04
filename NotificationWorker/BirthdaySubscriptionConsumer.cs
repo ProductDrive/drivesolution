@@ -20,6 +20,7 @@ namespace NotificationWorker
                 Console.WriteLine($"📅 Received birthday subscription for {subscription.Name}");
 
                 // Save subscription to database
+                subscription.Id = Guid.NewGuid(); // Ensure a new ID is generated
                 _db.BirthdaySubscriptions.Add(subscription);
                 await _db.SaveChangesAsync();
 
