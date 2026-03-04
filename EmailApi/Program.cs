@@ -37,7 +37,7 @@ builder.Services.AddMassTransit(x =>
     
     x.UsingRabbitMq((context, cfg) =>
     {
-        var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
+        //var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
         var rabuser = builder.Configuration["RABBITMQUSER"];
         var rabpas = builder.Configuration["RABBITMQPASS"];
         ;

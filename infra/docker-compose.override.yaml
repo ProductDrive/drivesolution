@@ -1,0 +1,19 @@
+# services:
+
+#   api:
+#     build:
+#       context: .
+#       dockerfile: ../EmailApi/Dockerfile.dev
+#     image: api-local
+
+#   birthday-api:
+#     build:
+#       context: .
+#       dockerfile:  ../BirthdayReminder/DockerFile
+#     image: birthday-local
+
+#   consumer:
+#     build:
+#       context: .
+#       dockerfile: ../NotificationWorker/Dockerfile
+#     image: consumer-local
