@@ -424,3 +424,7 @@ FodyWeavers.xsd
 /EmailApi/appsettings.Development.json
 /NotificationWorker/Decoderr.cs
 /BirthdayReminder/Jobstore/afebdayrem-firebase-adminsdk-fbsvc-83c5702430.json
+/BirthdayReminder/appsettings.json
+/docker-compose.yml
+/docker-compose.dev.yml
+/GLOBAL_EXCEPTION_HANDLING.md

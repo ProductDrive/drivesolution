@@ -35,6 +35,18 @@ namespace BirthdayReminder.Implementations
 
         }
 
+        public async Task<List<UserRecord>> GetAllUsers()
+        {
+            var collectionRef = firestoreDb.Collection("users");
+            var snapshot = await collectionRef.GetSnapshotAsync();
+
+            return snapshot.Documents
+                                     .Select(doc => doc.ConvertTo<UserRecord>())
+                                     .ToList();
+
+        }
+
+        //TODO: optimize this query
         public async Task<ResponseModel> GetUserEmailAsync(string userId)
         {
             var query = firestoreDb.Collection("users").WhereEqualTo("userId", userId);

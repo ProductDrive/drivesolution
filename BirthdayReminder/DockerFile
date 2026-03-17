@@ -16,21 +16,24 @@
 
 
 
+# =====================================================================================================================
+############################################## PRODUCTION CONFIGURATION ##############################################
+# =====================================================================================================================
 
 
-# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+ # Build stage
+ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ WORKDIR /src
 
-# Copy entire solution into container
-COPY ../ ./
+ # Copy entire solution into container
+ COPY ../ ./
 
-# Restore + publish
-RUN dotnet restore BirthdayReminder/BirthdayReminder.csproj
-RUN dotnet publish BirthdayReminder/BirthdayReminder.csproj -c Release -o /app/publish
+ # Restore + publish
+ RUN dotnet restore BirthdayReminder/BirthdayReminder.csproj
+ RUN dotnet publish BirthdayReminder/BirthdayReminder.csproj -c Release -o /app/publish
 
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-WORKDIR /app
-COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "BirthdayReminder.dll"]
+ # Runtime stage
+ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+ WORKDIR /app
+ COPY --from=build /app/publish .
+ ENTRYPOINT ["dotnet", "BirthdayReminder.dll"]

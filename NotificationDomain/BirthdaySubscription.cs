@@ -9,6 +9,7 @@ namespace NotificationDomain
     {
         public Guid Id { get; set; }
         public string CelebrantId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public int BirthDay { get; set; }
         public int BirthMonth { get; set; }
@@ -23,20 +24,34 @@ namespace NotificationDomain
 
         // Convenience accessor
         [NotMapped]
-        public List<string> NotificationTypes
+        public List<NotificationType> NotificationTypes
         {
             get => string.IsNullOrWhiteSpace(NotificationTypesJson) 
-                ? new List<string>() 
-                : JsonSerializer.Deserialize<List<string>>(NotificationTypesJson) ?? new List<string>();
-            set => NotificationTypesJson = JsonSerializer.Serialize(value ?? new List<string>());
+                ? new List<NotificationType>() 
+                : JsonSerializer.Deserialize<List<NotificationType>>(NotificationTypesJson) ?? new List<NotificationType>();
+            set => NotificationTypesJson = JsonSerializer.Serialize(value ?? new List<NotificationType>());
         }
         [NotMapped]
-        public List<string> NotifyTimes
+        public List<NotifyTime> NotifyTimes
         {
             get => string.IsNullOrWhiteSpace(NotifyTimesJson) 
-                ? new List<string>() 
-                : JsonSerializer.Deserialize<List<string>>(NotifyTimesJson) ?? new List<string>();
-            set => NotifyTimesJson = JsonSerializer.Serialize(value ?? new List<string>());
+                ? new List<NotifyTime>() 
+                : JsonSerializer.Deserialize<List<NotifyTime>>(NotifyTimesJson) ?? new List<NotifyTime>();
+            set => NotifyTimesJson = JsonSerializer.Serialize(value ?? new List<NotifyTime>());
         }
+    }
+
+    public enum NotificationType
+    {
+        Email,
+        SMS,
+        Push
+    }
+
+    public enum NotifyTime
+    {
+        OneMonthBefore,
+        TwoWeeksBefore,
+        ThreeDaysBefore,
     }
 }

@@ -12,5 +12,6 @@ namespace BirthdayReminder.interfaces
         Task<ResponseModel> CelebrantsByUserEmailAsync();
         List<MessageModel> BuildBirthdayMessages(ResponseModel model, bool today);
         Task<ResponseModel> SendBirthdayEmails(List<MessageModel> messageModels);
+        Task<List<UserRecord>> GetAllUsers();
     }
 }

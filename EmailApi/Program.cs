@@ -8,6 +8,8 @@ using static MassTransit.Logging.DiagnosticHeaders.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
+builder.AddFileLogging();
+
 // 1️⃣ Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -52,6 +54,9 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+
+app.UseGlobalExceptionHandler();
+
 app.UseCors("EmailsCorsPolicy");
 
 // 3️⃣ Enable Swagger middleware

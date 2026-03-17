@@ -1,16 +1,12 @@
 using BirthdayReminder.Data;
 using BirthdayReminder.Implementations;
 using BirthdayReminder.interfaces;
-using BirthdayReminder.Models;
 using MassTransit;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
-using NotificationDomain;
-using PD.EmailSender.Helpers.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddFileLogging();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -29,6 +25,7 @@ builder.Services.AddCors(options =>
 );
 
 builder.Services.AddScoped<IFirebaseStoreService, FirebaseStoreService>();
+builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
 
 // Register local NotificationDbContext pointing to the same Postgres used by the worker
 var notificationConn = builder.Configuration.GetConnectionString("notificationdb");
@@ -57,83 +54,13 @@ builder.Services.AddMassTransit(x =>
 
 var app = builder.Build();
 
+app.UseGlobalExceptionHandler();
+
 app.UseCors("CorsPolicy");
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline
 app.UseSwagger();
 app.UseSwaggerUI();
-
-app.MapGet("/reminders", async (IFirebaseStoreService firebaseStore) =>
-{
-    var celebrants = await firebaseStore.CelebrantsByUserEmailAsync();
-    List<MessageModel> messages = new();
-    messages.AddRange(firebaseStore.BuildBirthdayMessages(celebrants, true));
-    messages.AddRange(firebaseStore.BuildBirthdayMessages(celebrants, false));
-    var result = await firebaseStore.SendBirthdayEmails(messages);
-    return Results.Ok(result);
-});
-
-// New endpoint: POST /api/birthdays/subscribe
-app.MapPost("/api/birthdays/subscribe", async (SubscriptionRequest req, IPublishEndpoint publishEndpoint) =>
-{
-    if (req == null)
-        return Results.BadRequest("Invalid payload");
-
-    if (string.IsNullOrWhiteSpace(req.CelebrantId) || string.IsNullOrWhiteSpace(req.Name))
-        return Results.BadRequest("CelebrantId and Name are required");
-
-    if (req.BirthDay < 1 || req.BirthDay > 31 || req.BirthMonth < 1 || req.BirthMonth > 12)
-        return Results.BadRequest("Invalid BirthDay or BirthMonth");
-
-    if (req.NotificationType == null || req.NotificationType.Count == 0)
-        return Results.BadRequest("At least one NotificationType is required");
-
-    // Create domain model
-    var subscription = new BirthdaySubscription
-    {
-        CelebrantId = req.CelebrantId,
-        Name = req.Name,
-        BirthDay = req.BirthDay,
-        BirthMonth = req.BirthMonth,
-        NotificationTypes = req.NotificationType,
-        NotifyTimes = req.NotifyTimes,
-        CreatedAt = DateTime.UtcNow
-    };
-
-    // Publish to RabbitMQ for NotificationWorker to consume and save
-    await publishEndpoint.Publish(subscription);
-
-    return Results.Accepted("Subscription received and queued for processing");
-});
-
-// New endpoint: GET /api/birthdays/subscription/{celebrantId}
-app.MapGet("/api/birthdays/subscription/{celebrantId}", async (string celebrantId, NotificationDbContext db) =>
-{
-    if (string.IsNullOrWhiteSpace(celebrantId))
-        return Results.BadRequest("celebrantId is required");
-
-    var sub = await db.BirthdaySubscriptions
-                      .AsNoTracking()
-                      .FirstOrDefaultAsync(s => s.CelebrantId == celebrantId);
-
-    if (sub == null)
-        return Results.NotFound();
-
-    var result = new
-    {
-        sub.Id,
-        sub.CelebrantId,
-        sub.Name,
-        sub.BirthDay,
-        sub.BirthMonth,
-        NotificationTypes = sub.NotificationTypes,
-        NotifyTimes = sub.NotifyTimes,
-        sub.CreatedAt
-    };
-
-    return Results.Ok(result);
-});
 
 app.MapGet("/testapi", () =>
 {
