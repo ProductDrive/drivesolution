@@ -35,6 +35,12 @@ var cache = builder.AddRedis("cache");
 var apiService = builder.AddProject<Projects.DriveSolution_ApiService>("apiservice")
                         .WithReference(cache);
 
-builder.AddProject<Projects.BirthdayReminder>("birthdayreminder");
+builder.AddProject<Projects.BirthdayReminder>("birthdayreminder")
+       .WithReference(rabbit)
+       .WaitFor(rabbit);
+
+builder.AddProject<Projects.WhatsAppApi>("whatsappapi")
+       .WithReference(rabbit)
+       .WaitFor(rabbit);
 
 builder.Build().Run();

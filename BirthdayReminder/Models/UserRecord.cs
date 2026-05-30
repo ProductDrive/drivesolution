@@ -1,4 +1,4 @@
-﻿using Google.Cloud.Firestore;
+using Google.Cloud.Firestore;
 
 namespace BirthdayReminder.Models
 {
@@ -10,5 +10,8 @@ namespace BirthdayReminder.Models
 
         [FirestoreProperty("email")]
         public string Email { get; set; }
+
+        [FirestoreProperty("whatsappNumber")]
+        public string WhatsappNumber { get; set; }
     }
 }

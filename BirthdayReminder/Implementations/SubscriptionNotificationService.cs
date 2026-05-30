@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using NotificationDomain;
 using PD.EmailSender.Helpers;
 using PD.EmailSender.Helpers.Model;
+using PD.WhatsAppSender;
 using System.Collections.Generic;
 using System.Text;
 using static MassTransit.Monitoring.Performance.BuiltInCounters;
@@ -22,14 +23,17 @@ namespace BirthdayReminder.Implementations
     {
         private readonly NotificationDbContext _dbContext;
         private readonly IFirebaseStoreService _firebaseStoreService;
+        private readonly IPushNotificationService _pushNotificationService;
         public List<UserRecord> _allUsers { get; set; }
 
         public SubscriptionNotificationService(
             NotificationDbContext dbContext,
-            IFirebaseStoreService firebaseStoreService)
+            IFirebaseStoreService firebaseStoreService,
+            IPushNotificationService pushNotificationService)
         {
             _dbContext = dbContext;
             _firebaseStoreService = firebaseStoreService;
+            _pushNotificationService = pushNotificationService;
             _allUsers = _firebaseStoreService.GetAllUsers().Result;
         }
 
@@ -47,21 +51,27 @@ namespace BirthdayReminder.Implementations
                 Console.WriteLine(sub.Name);
             }
 
-            //var subscriptions = JsonConvert.DeserializeObject<List<BirthdaySubscription>>("[\n  {\n    \"Id\": \"38731314-024a-4487-bb9b-03dab3579df0\",\n    \"CelebrantId\": \"XAwk6gHPowaQqSsJMyTt\",\n    \"Name\": \"Julius \",\n    \"BirthDay\": \"16\",\n    \"BirthMonth\": \"03\",\n    \"CreatedAt\": \"2026-03-03\",\n    \"NotificationTypesJson\": \"[0]\",\n    \"NotifyTimesJson\": \"[1]\",\n    \"UserId\": \"2lhwqMIlNWOGyeQsc8EkxABZpTm1\"\n  },\n  {\n    \"Id\": \"790b5105-61b1-4bfe-98dc-c6e93e335dbe\",\n    \"CelebrantId\": \"StyQ3HUCtEpfs4f5iCAn\",\n    \"Name\": \"Ayokunle Afe\",\n    \"BirthDay\": \"13\",\n    \"BirthMonth\": \"4\",\n    \"CreatedAt\": \"2026-03-03\",\n    \"NotificationTypesJson\": \"[0,1]\",\n    \"NotifyTimesJson\": \"[0,1,2]\",\n    \"UserId\": \"2lhwqMIlNWOGyeQsc8EkxABZpTm1\"\n  },\n  {\n    \"Id\": \"83d138dc-a26d-4332-8df6-2adea78bdf34\",\n    \"CelebrantId\": \"veKlo061sZOtjmgaWRSF\",\n    \"Name\": \"Oloruko gigunnimi forthesakeoftestjare\",\n    \"BirthDay\": \"8\",\n    \"BirthMonth\": \"3\",\n    \"CreatedAt\": \"2026-03-03\",\n    \"NotificationTypesJson\": \"[0,1]\",\n    \"NotifyTimesJson\": \"[0,1,2]\",\n    \"UserId\": \"LBrpxQ9Mt5SirJMKpVgo8ZWD2re2\"\n  },\n  {\n    \"Id\": \"ad27b1a7-589a-4cf1-912d-4d21d605b41d\",\n    \"CelebrantId\": \"E2AuFrxadyWNxr1pfZNg\",\n    \"Name\": \"Testy Test\",\n    \"BirthDay\": \"16\",\n    \"BirthMonth\": \"3\",\n    \"CreatedAt\": \"2026-03-03\",\n    \"NotificationTypesJson\": \"[0,1]\",\n    \"NotifyTimesJson\": \"[0,1,2]\",\n    \"UserId\": \"LBrpxQ9Mt5SirJMKpVgo8ZWD2re2\"\n  },\n  {\n    \"Id\": \"ba1009ad-1afb-4f46-b019-3da2abcfa4a1\",\n    \"CelebrantId\": \"66W8gJGeayBhAqRW5KvF\",\n    \"Name\": \"Joses Afe\",\n    \"BirthDay\": \"31\",\n    \"BirthMonth\": \"10\",\n    \"CreatedAt\": \"2026-03-03\",\n    \"NotificationTypesJson\": \"[0,1]\",\n    \"NotifyTimesJson\": \"[2]\",\n    \"UserId\": \"LBrpxQ9Mt5SirJMKpVgo8ZWD2re2\"\n  }\n]");
+            await SendEmailNotificationsAsync(subscriptions);
+            await SendWhatsAppNotificationsAsync(subscriptions);
+            await SendPushNotificationsAsync(subscriptions);
+        }
 
+        private async Task SendEmailNotificationsAsync(List<BirthdaySubscription> allSubscriptions)
+        {
+            var emailSubscriptions = allSubscriptions
+                .Where(x => x.NotificationTypes.Contains(NotificationType.Email))
+                .ToList();
 
-            subscriptions = subscriptions.Where(x=> x.NotificationTypes.Contains(NotificationType.Email)).ToList();
-            var subscriptionsToNotify = subscriptions
+            var subscriptionsToNotify = emailSubscriptions
                 .SelectMany(s => FilterSubcriptions(s)
                     .Select(d => new { Subscription = s, NotifyTime = d.NotifyTime }))
                 .ToList();
 
             if (subscriptionsToNotify.Count == 0)
             {
-                Console.WriteLine("No subscription notifications to send today.");
+                Console.WriteLine("No email notifications to send today.");
                 return;
             }
-
 
             var subscriptionsByEmail = subscriptionsToNotify
                 .Select(item => new 
@@ -76,11 +86,10 @@ namespace BirthdayReminder.Implementations
 
             foreach (var group in subscriptionsByEmail)
             {
-
                 var displayName = new List<string>();
                 if (string.IsNullOrEmpty(group.Key))
                 {
-                    continue; // skip if no valid email found for the group
+                    continue;
                 }
                 var email = group.Key;
                 var celebrants = group.Select(g => new NotificationTriger
@@ -108,11 +117,110 @@ namespace BirthdayReminder.Implementations
             }
         }
 
+        private async Task SendWhatsAppNotificationsAsync(List<BirthdaySubscription> allSubscriptions)
+        {
+            var whatsappSubscriptions = allSubscriptions
+                .Where(x => x.NotificationTypes.Contains(NotificationType.WhatsApp))
+                .ToList();
+
+            var subscriptionsToNotify = whatsappSubscriptions
+                .SelectMany(s => FilterSubcriptions(s)
+                    .Select(d => new { Subscription = s, NotifyTime = d.NotifyTime }))
+                .ToList();
+
+            if (subscriptionsToNotify.Count == 0)
+            {
+                Console.WriteLine("No WhatsApp notifications to send today.");
+                return;
+            }
+
+            var subscriptionsByPhone = subscriptionsToNotify
+                .Select(item => new 
+                { 
+                    Phone = GetUserPhoneForCelebrant(item.Subscription.UserId),
+                    item.Subscription,
+                    item.NotifyTime
+                })
+                .Where(x => !string.IsNullOrEmpty(x.Phone))
+                .GroupBy(x => x.Phone)
+                .ToList();
+
+            foreach (var group in subscriptionsByPhone)
+            {
+                if (string.IsNullOrEmpty(group.Key))
+                {
+                    continue;
+                }
+                var phoneNumber = group.Key;
+                var celebrants = group.Select(g => new NotificationTriger
+                { 
+                    Name = g.Subscription.Name, 
+                    NotifyTime = g.NotifyTime 
+                }).ToList();
+
+                var message = BuildWhatsAppMessage(celebrants);
+
+                await SendWhatsAppAsync(phoneNumber, message);
+            }
+        }
+
+        private async Task SendPushNotificationsAsync(List<BirthdaySubscription> allSubscriptions)
+        {
+            var pushSubscriptions = allSubscriptions
+                .Where(x => x.NotificationTypes.Contains(NotificationType.Push))
+                .ToList();
+
+            var subscriptionsToNotify = pushSubscriptions
+                .SelectMany(s => FilterSubcriptions(s)
+                    .Select(d => new { Subscription = s, NotifyTime = d.NotifyTime }))
+                .ToList();
+
+            if (subscriptionsToNotify.Count == 0)
+            {
+                Console.WriteLine("No push notifications to send today.");
+                return;
+            }
+
+            var subscriptionsByUser = subscriptionsToNotify
+                .GroupBy(x => x.Subscription.UserId)
+                .ToList();
+
+            foreach (var group in subscriptionsByUser)
+            {
+                if (string.IsNullOrEmpty(group.Key)) continue;
+
+                var userId = group.Key;
+                var celebrants = group.Select(g => new NotificationTriger
+                {
+                    Name = g.Subscription.Name,
+                    NotifyTime = g.NotifyTime
+                }).ToList();
+
+                var plural = celebrants.Count > 1 ? "s" : "";
+                var title = "Birthday Reminder";
+                var body = celebrants.Count == 1
+                    ? $"{celebrants[0].Name}'s birthday is coming up {FormatNotifyTime(celebrants[0].NotifyTime)}"
+                    : $"{celebrants.Count} birthday{plural} coming up soon!";
+
+                await _pushNotificationService.SendToUserAsync(userId, title, body);
+            }
+        }
+
+        private static string FormatNotifyTime(NotifyTime notifyTime)
+        {
+            return notifyTime switch
+            {
+                NotifyTime.OneMonthBefore => "in 1 month",
+                NotifyTime.TwoWeeksBefore => "in 2 weeks",
+                NotifyTime.ThreeDaysBefore => "in 3 days",
+                _ => "soon"
+            };
+        }
+
         private string GetUserEmailForCelebrant(string userId)
         {
             if (userId != null)
             {
-                //check if userId exists in _allUsers to avoid potential exceptions
                 var user = _allUsers.FirstOrDefault(u => u.UserId == userId);
                 if (user != null)
                 {
@@ -123,10 +231,31 @@ namespace BirthdayReminder.Implementations
                     Console.WriteLine($"UserId {userId} not found in user records.");
                     return string.Empty;
                 }
-
-
             }
-            else            {
+            else            
+            {
+                Console.WriteLine("UserId is null for a subscription.");
+                return string.Empty;
+            }
+        }
+
+        private string GetUserPhoneForCelebrant(string userId)
+        {
+            if (userId != null)
+            {
+                var user = _allUsers.FirstOrDefault(u => u.UserId == userId);
+                if (user != null && !string.IsNullOrWhiteSpace(user.WhatsappNumber))
+                {
+                    return user.WhatsappNumber;
+                }
+                else
+                {
+                    Console.WriteLine($"UserId {userId} not found in user records or no phone number.");
+                    return string.Empty;
+                }
+            }
+            else            
+            {
                 Console.WriteLine("UserId is null for a subscription.");
                 return string.Empty;
             }
@@ -205,6 +334,65 @@ namespace BirthdayReminder.Implementations
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to send email to {toEmail}: {ex.Message}");
+            }
+        }
+
+        private string BuildWhatsAppMessage(List<NotificationTriger> celebrants)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"🎂 *Upcoming Birthdays*");
+            sb.AppendLine();
+            foreach (var celebrant in celebrants)
+            {
+                var timeDescription = celebrant.NotifyTime switch
+                {
+                    NotifyTime.OneMonthBefore => "in 1 month",
+                    NotifyTime.TwoWeeksBefore => "in 2 weeks",
+                    NotifyTime.ThreeDaysBefore => "in 3 days",
+                    _ => "soon"
+                };
+                sb.AppendLine($"• *{celebrant.Name}*'s birthday is coming up {timeDescription}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("Don't forget to send your wishes!");
+
+            return sb.ToString();
+        }
+
+        private async Task SendWhatsAppAsync(string phoneNumber, string message)
+        {
+            try
+            {
+                var messageDto = new NotificationDomain.MessageDTO
+                {
+                    MessageType = NotificationDomain.PDMessageType.WhatsApp,
+                    Subject = "Birthday Reminder",
+                    Message = message,
+                    Contacts = new List<NotificationDomain.ContactsModel>
+                    {
+                        new NotificationDomain.ContactsModel { Phone = phoneNumber }
+                    },
+                    SenderSettings = new NotificationDomain.SenderSettingsDTO { OnBehalf = true },
+                    FallBackSenderSettings = new NotificationDomain.SenderSettingsDTO { OnBehalf = true }
+                };
+
+                var result = PD.WhatsAppSender.WhatsAppHelper.SendWhatsAppDirect(messageDto);
+                if (result)
+                {
+                    Console.WriteLine($"WhatsApp sent to {phoneNumber}");
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to send WhatsApp to {phoneNumber}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send WhatsApp to {phoneNumber}: {ex.Message}");
+            }
+            finally
+            {
+                await Task.CompletedTask; // Placeholder for any asynchronous cleanup if needed in the future
             }
         }
     }

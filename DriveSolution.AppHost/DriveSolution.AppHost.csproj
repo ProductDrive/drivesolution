@@ -16,6 +16,7 @@
     <ProjectReference Include="..\DriveSolution.Web\DriveSolution.Web.csproj" />
     <ProjectReference Include="..\EmailApi\EmailApi.csproj" />
     <ProjectReference Include="..\NotificationWorker\NotificationWorker.csproj" />
+    <ProjectReference Include="..\WhatsAppApi\WhatsAppApi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NotificationDomain\NotificationDomain.csproj" />
+    <ProjectReference Include="..\PD.WhatsAppSender\PD.WhatsAppSender.csproj" />
   </ItemGroup>
 
 </Project>

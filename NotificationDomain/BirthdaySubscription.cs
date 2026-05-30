@@ -45,7 +45,8 @@ namespace NotificationDomain
     {
         Email,
         SMS,
-        Push
+        Push,
+        WhatsApp
     }
 
     public enum NotifyTime

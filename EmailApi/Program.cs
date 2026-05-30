@@ -36,9 +36,15 @@ builder.Services.AddOptions<Secrets>()
 // MassTransit with RabbitMQ
 builder.Services.AddMassTransit(x =>
 {
-    
     x.UsingRabbitMq((context, cfg) =>
     {
+        //var rabbitConnection = builder.Configuration.GetConnectionString("rabbitmq");
+        //if (string.IsNullOrEmpty(rabbitConnection))
+        //    throw new InvalidOperationException("RabbitMQ connection string not found.");
+        //cfg.Host(rabbitConnection);
+
+        //=================================PROD===========================================
+
         //var rabbitConn = builder.Configuration.GetConnectionString("rabbitmq");
         var rabuser = builder.Configuration["RABBITMQUSER"];
         var rabpas = builder.Configuration["RABBITMQPASS"];
@@ -46,10 +52,10 @@ builder.Services.AddMassTransit(x =>
         cfg.Host("rabbitmq",
             "/",
             h =>
-        {
-            h.Username(rabuser);
-            h.Password(rabpas);
-        });
+            {
+                h.Username(rabuser);
+                h.Password(rabpas);
+            });
     });
 });
 
