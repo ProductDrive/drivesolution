@@ -428,3 +428,7 @@ FodyWeavers.xsd
 /docker-compose.yml
 /docker-compose.dev.yml
 /GLOBAL_EXCEPTION_HANDLING.md
+/BirthdayReminder/appsettings.Development.json
+/DriveSolution.ApiService/appsettings.Development.json
+/DriveSolution.Web/appsettings.Development.json
+/WhatsAppApi/appsettings.json
