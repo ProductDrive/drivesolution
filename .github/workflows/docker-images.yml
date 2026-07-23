@@ -33,7 +33,7 @@ jobs:
         include:
 
           - image: api
-            dockerfile: drivesolution/EmailApi/Dockerfile
+            dockerfile: drivesolution/Dockerfile
 
           - image: birthday
             dockerfile: drivesolution/BirthdayReminder/Dockerfile
