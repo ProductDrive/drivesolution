@@ -27,6 +27,8 @@ builder.Services.AddCors(options =>
 );
 
 builder.Services.AddScoped<IFirebaseStoreService, FirebaseStoreService>();
+builder.Services.AddSingleton<OtpService>();
+builder.AddRedisDistributedCache("cache");
 builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
@@ -85,7 +87,6 @@ app.MapGet("/testapi", () =>
     return Results.Ok("Hit success");
 });
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

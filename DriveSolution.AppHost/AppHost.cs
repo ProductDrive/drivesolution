@@ -36,6 +36,7 @@ var apiService = builder.AddProject<Projects.DriveSolution_ApiService>("apiservi
                         .WithReference(cache);
 
 builder.AddProject<Projects.BirthdayReminder>("birthdayreminder")
+       .WithReference(cache)
        .WithReference(rabbit)
        .WaitFor(rabbit);
 

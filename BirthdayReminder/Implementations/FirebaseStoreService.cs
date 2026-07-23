@@ -87,23 +87,33 @@ namespace BirthdayReminder.Implementations
         // from the celebrants group, get the user email for each userId
         public async Task<ResponseModel> CelebrantsByUserEmailAsync()
         {
-            var celebrantsByUserId = await CelebrantsByUserIdAsync();
-            var result = new Dictionary<string, List<Celebrant>>();
 
-            foreach (var entry in celebrantsByUserId)
+            try
             {
-                var userId = entry.Key;
-                var celebrants = entry.Value;
+                var celebrantsByUserId = await CelebrantsByUserIdAsync();
+                var result = new Dictionary<string, List<Celebrant>>();
 
-                var response = await GetUserEmailAsync(userId);
-                if (response.Status)
+                foreach (var entry in celebrantsByUserId)
                 {
-                    var email = ((dynamic)response.ReturnObj).Email;
-                    result[email] = celebrants;
+                    var userId = entry.Key;
+                    var celebrants = entry.Value;
+
+                    var response = await GetUserEmailAsync(userId);
+                    if (response.Status)
+                    {
+                        var email = ((dynamic)response.ReturnObj).Email;
+                        result[email] = celebrants;
+                    }
                 }
+                return new ResponseModel { Response = "success", ReturnObj = result, Status = true };
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
             }
 
-            return new ResponseModel { Response = "success", ReturnObj = result, Status = true };
+            
         }
 
         // Build Birthday email message for each user email using MessageDTO
