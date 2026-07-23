@@ -33,13 +33,13 @@ jobs:
         include:
 
           - image: api
-            dockerfile: drivesolution/Dockerfile
+            dockerfile: Dockerfile
 
           - image: birthday
-            dockerfile: drivesolution/BirthdayReminder/Dockerfile
+            dockerfile: BirthdayReminder/Dockerfile
 
           - image: consumer
-            dockerfile: drivesolution/NotificationWorker/Dockerfile
+            dockerfile: NotificationWorker/Dockerfile
 
     steps:
 
@@ -74,7 +74,7 @@ jobs:
         uses: docker/build-push-action@v6
 
         with:
-          context: drivesolution
+          context: .
           file: ${{ matrix.dockerfile }}
 
           push: true
