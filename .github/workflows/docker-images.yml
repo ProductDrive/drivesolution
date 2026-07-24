@@ -36,7 +36,7 @@ jobs:
             dockerfile: Dockerfile
 
           - image: birthday
-            dockerfile: BirthdayReminder/Dockerfile
+            dockerfile: BirthdayReminder/DockerFile
 
           - image: consumer
             dockerfile: NotificationWorker/Dockerfile
