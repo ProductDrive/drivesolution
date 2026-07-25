@@ -14,10 +14,10 @@ namespace NotificationDomain
         public int BirthDay { get; set; }
         public int BirthMonth { get; set; }
         
-        // Stored as JSON: ["whatsapp","email"]
+        
         public string NotificationTypesJson { get; set; } = "[]";
         
-        // Stored as JSON: ["1month","2weeks","3days"]
+        
         public string NotifyTimesJson { get; set; } = "[]";
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

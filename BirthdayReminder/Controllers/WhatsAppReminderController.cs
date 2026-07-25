@@ -55,7 +55,7 @@ namespace BirthdayReminder.Controllers
 
             var whatsappSubscriptions = await _dbContext.BirthdaySubscriptions
                 .AsNoTracking()
-                .Where(s => s.NotificationTypesJson.Contains("WhatsApp"))
+                .Where(s => s.NotificationTypesJson.Contains("3"))
                 .ToListAsync();
 
             var allUsers = await _firebaseStoreService.GetAllUsers();
