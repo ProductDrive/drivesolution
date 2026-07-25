@@ -53,13 +53,10 @@ namespace BirthdayReminder.Controllers
             if (token == null || !_otpService.IsValidToken(token))
                 return Unauthorized("Invalid or expired token");
 
-            var allSubscriptions = await _dbContext.BirthdaySubscriptions
+            var whatsappSubscriptions = await _dbContext.BirthdaySubscriptions
                 .AsNoTracking()
+                .Where(s => s.NotificationTypesJson.Contains("WhatsApp"))
                 .ToListAsync();
-
-            var whatsappSubscriptions = allSubscriptions
-                .Where(s => s.NotificationTypes.Contains(NotificationType.WhatsApp))
-                .ToList();
 
             var allUsers = await _firebaseStoreService.GetAllUsers();
 
@@ -68,13 +65,11 @@ namespace BirthdayReminder.Controllers
 
             foreach (var sub in whatsappSubscriptions)
             {
-                var matches = GetUpcomingMatches(sub, today);
-                if (matches.Count == 0)
+                var upcomingTimes = GetUpcomingMatches(sub, today);
+                if (upcomingTimes.Count == 0)
                     continue;
 
                 var user = allUsers.FirstOrDefault(u => u.UserId == sub.UserId);
-                if (user == null || string.IsNullOrWhiteSpace(user.WhatsappNumber))
-                    continue;
 
                 var existing = results.FirstOrDefault(r => r.UserId == sub.UserId);
                 if (existing == null)
@@ -82,21 +77,20 @@ namespace BirthdayReminder.Controllers
                     existing = new WhatsAppReminderResponse
                     {
                         UserId = sub.UserId,
-                        UserName = user.Email,
-                        WhatsappNumber = user.WhatsappNumber
+                        UserName = user?.Email ?? sub.UserId,
+                        WhatsappNumber = user?.WhatsappNumber ?? ""
                     };
                     results.Add(existing);
                 }
 
-                foreach (var match in matches)
+                var birthDateThisYear = new DateTime(today.Year, sub.BirthMonth, sub.BirthDay);
+                if (birthDateThisYear < today)
+                    birthDateThisYear = birthDateThisYear.AddYears(1);
+
+                var daysUntil = (birthDateThisYear - today).Days;
+
+                foreach (var match in upcomingTimes)
                 {
-                    var birthDateThisYear = new DateTime(today.Year, sub.BirthMonth, sub.BirthDay);
-                    if (birthDateThisYear < today)
-                        birthDateThisYear = birthDateThisYear.AddYears(1);
-
-                    var daysUntil = (birthDateThisYear - today).Days;
-                    var timeDesc = FormatNotifyTime(match);
-
                     existing.Celebrants.Add(new CelebrantReminder
                     {
                         CelebrantId = sub.CelebrantId,
@@ -105,7 +99,7 @@ namespace BirthdayReminder.Controllers
                         BirthMonth = sub.BirthMonth,
                         NotifyTime = match.ToString(),
                         DaysUntilBirthday = daysUntil,
-                        Message = $"{sub.Name}'s birthday is coming up {timeDesc}!"
+                        Message = $"{sub.Name}'s birthday is coming up {FormatNotifyTime(match)}!"
                     });
                 }
             }
