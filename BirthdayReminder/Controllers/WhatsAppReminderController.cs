@@ -117,13 +117,13 @@ namespace BirthdayReminder.Controllers
 
             var daysUntil = (birthDateThisYear - today).Days;
 
-            if (sub.NotifyTimes.Contains(NotifyTime.OneMonthBefore) && daysUntil <= 30)
+            if (sub.NotifyTimes.Contains(NotifyTime.OneMonthBefore) && daysUntil == 30)
                 result.Add(NotifyTime.OneMonthBefore);
 
-            if (sub.NotifyTimes.Contains(NotifyTime.TwoWeeksBefore) && daysUntil <= 14)
+            if (sub.NotifyTimes.Contains(NotifyTime.TwoWeeksBefore) && daysUntil == 14)
                 result.Add(NotifyTime.TwoWeeksBefore);
 
-            if (sub.NotifyTimes.Contains(NotifyTime.ThreeDaysBefore) && daysUntil <= 3)
+            if (sub.NotifyTimes.Contains(NotifyTime.ThreeDaysBefore) && daysUntil == 3)
                 result.Add(NotifyTime.ThreeDaysBefore);
 
             return result;
