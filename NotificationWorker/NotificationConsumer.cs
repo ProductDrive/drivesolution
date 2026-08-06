@@ -53,7 +53,6 @@ namespace NotificationWorker
                     SentAt = DateTime.UtcNow,
                 };
                 _db.Notifications.Add(record);
-                await _db.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -100,7 +99,6 @@ namespace NotificationWorker
                     SentAt = DateTime.UtcNow,
                 };
                 _db.Notifications.Add(record);
-                await _db.SaveChangesAsync();
             }
             catch (Exception ex)
             {

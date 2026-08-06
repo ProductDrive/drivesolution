@@ -59,35 +59,29 @@ namespace BirthdayReminder.Controllers
                 .ToListAsync();
 
             var allUsers = await _firebaseStoreService.GetAllUsers();
+            var allCelebrants = await _firebaseStoreService.GetAllCelebrant();
 
             var today = DateTime.Today;
-            var results = new List<WhatsAppReminderResponse>();
+            var userById = allUsers
+                .GroupBy(u => u.UserId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var results = new Dictionary<string, WhatsAppReminderResponse>();
 
             foreach (var sub in whatsappSubscriptions)
             {
-                var upcomingTimes = GetUpcomingMatches(sub, today);
+                var birthDateThisYear = GetBirthDateThisYear(sub.BirthDay, sub.BirthMonth, today);
+                var daysUntil = (birthDateThisYear - today).Days;
+
+                var upcomingTimes = GetUpcomingMatches(sub, daysUntil);
                 if (upcomingTimes.Count == 0)
                     continue;
 
-                var user = allUsers.FirstOrDefault(u => u.UserId == sub.UserId);
-
-                var existing = results.FirstOrDefault(r => r.UserId == sub.UserId);
-                if (existing == null)
+                if (!results.TryGetValue(sub.UserId, out var existing))
                 {
-                    existing = new WhatsAppReminderResponse
-                    {
-                        UserId = sub.UserId,
-                        UserName = user?.Email ?? sub.UserId,
-                        WhatsappNumber = user?.WhatsappNumber ?? ""
-                    };
-                    results.Add(existing);
+                    existing = CreateReminderResponse(sub.UserId, userById);
+                    results[sub.UserId] = existing;
                 }
-
-                var birthDateThisYear = new DateTime(today.Year, sub.BirthMonth, sub.BirthDay);
-                if (birthDateThisYear < today)
-                    birthDateThisYear = birthDateThisYear.AddYears(1);
-
-                var daysUntil = (birthDateThisYear - today).Days;
 
                 foreach (var match in upcomingTimes)
                 {
@@ -104,18 +98,51 @@ namespace BirthdayReminder.Controllers
                 }
             }
 
-            return Ok(results);
+            var celebrantsWithBirthdayToday = allCelebrants
+                .Where(c => c.BirthMonth == today.Month && c.BirthDay == today.Day)
+                .GroupBy(c => c.UserId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            foreach (var group in celebrantsWithBirthdayToday)
+            {
+                if (!userById.TryGetValue(group.Key, out var user))
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(user.WhatsappNumber))
+                    continue;
+
+                if (!results.TryGetValue(group.Key, out var existing))
+                {
+                    existing = CreateReminderResponse(group.Key, userById);
+                    results[group.Key] = existing;
+                }
+
+                var addedCelebrantIds = existing.Celebrants.Select(c => c.CelebrantId).ToHashSet();
+
+                foreach (var celebrant in group.Value)
+                {
+                    if (!addedCelebrantIds.Add(celebrant.Id))
+                        continue;
+
+                    existing.Celebrants.Add(new CelebrantReminder
+                    {
+                        CelebrantId = celebrant.Id,
+                        Name = celebrant.Name,
+                        BirthDay = celebrant.BirthDay,
+                        BirthMonth = celebrant.BirthMonth,
+                        NotifyTime = "Today",
+                        DaysUntilBirthday = 0,
+                        Message = $"{celebrant.Name}'s birthday is today!"
+                    });
+                }
+            }
+
+            return Ok(results.Values);
         }
 
-        private static List<NotifyTime> GetUpcomingMatches(BirthdaySubscription sub, DateTime today)
+        private static List<NotifyTime> GetUpcomingMatches(BirthdaySubscription sub, int daysUntil)
         {
             var result = new List<NotifyTime>();
-            var birthDateThisYear = new DateTime(today.Year, sub.BirthMonth, sub.BirthDay);
-
-            if (birthDateThisYear < today)
-                birthDateThisYear = birthDateThisYear.AddYears(1);
-
-            var daysUntil = (birthDateThisYear - today).Days;
 
             if (sub.NotifyTimes.Contains(NotifyTime.OneMonthBefore) && daysUntil == 30)
                 result.Add(NotifyTime.OneMonthBefore);
@@ -127,6 +154,25 @@ namespace BirthdayReminder.Controllers
                 result.Add(NotifyTime.ThreeDaysBefore);
 
             return result;
+        }
+
+        private static DateTime GetBirthDateThisYear(int birthDay, int birthMonth, DateTime today)
+        {
+            var birthDate = new DateTime(today.Year, birthMonth, birthDay);
+            if (birthDate < today)
+                birthDate = birthDate.AddYears(1);
+            return birthDate;
+        }
+
+        private static WhatsAppReminderResponse CreateReminderResponse(string userId, Dictionary<string, UserRecord> userById)
+        {
+            userById.TryGetValue(userId, out var user);
+            return new WhatsAppReminderResponse
+            {
+                UserId = userId,
+                UserName = user?.Email ?? userId,
+                WhatsappNumber = user?.WhatsappNumber ?? ""
+            };
         }
 
         private static string FormatNotifyTime(NotifyTime notifyTime)
