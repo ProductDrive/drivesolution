@@ -53,13 +53,10 @@ namespace BirthdayReminder.Controllers
             if (token == null || !_otpService.IsValidToken(token))
                 return Unauthorized("Invalid or expired token");
 
-            var allSubscriptions = await _dbContext.BirthdaySubscriptions
+            var whatsappSubscriptions = await _dbContext.BirthdaySubscriptions
                 .AsNoTracking()
+                .Where(s => s.NotificationTypesJson.Contains("3"))
                 .ToListAsync();
-
-            var whatsappSubscriptions = allSubscriptions
-                .Where(s => s.NotificationTypes.Contains(NotificationType.WhatsApp))
-                .ToList();
 
             var allUsers = await _firebaseStoreService.GetAllUsers();
             var allCelebrants = await _firebaseStoreService.GetAllCelebrant();
@@ -88,8 +85,6 @@ namespace BirthdayReminder.Controllers
 
                 foreach (var match in upcomingTimes)
                 {
-                    var timeDesc = FormatNotifyTime(match);
-
                     existing.Celebrants.Add(new CelebrantReminder
                     {
                         CelebrantId = sub.CelebrantId,
@@ -98,7 +93,7 @@ namespace BirthdayReminder.Controllers
                         BirthMonth = sub.BirthMonth,
                         NotifyTime = match.ToString(),
                         DaysUntilBirthday = daysUntil,
-                        Message = $"{sub.Name}'s birthday is coming up {timeDesc}!"
+                        Message = $"{sub.Name}'s birthday is coming up {FormatNotifyTime(match)}!"
                     });
                 }
             }
@@ -149,13 +144,13 @@ namespace BirthdayReminder.Controllers
         {
             var result = new List<NotifyTime>();
 
-            if (sub.NotifyTimes.Contains(NotifyTime.OneMonthBefore) && daysUntil <= 30)
+            if (sub.NotifyTimes.Contains(NotifyTime.OneMonthBefore) && daysUntil == 30)
                 result.Add(NotifyTime.OneMonthBefore);
 
-            if (sub.NotifyTimes.Contains(NotifyTime.TwoWeeksBefore) && daysUntil <= 14)
+            if (sub.NotifyTimes.Contains(NotifyTime.TwoWeeksBefore) && daysUntil == 14)
                 result.Add(NotifyTime.TwoWeeksBefore);
 
-            if (sub.NotifyTimes.Contains(NotifyTime.ThreeDaysBefore) && daysUntil <= 3)
+            if (sub.NotifyTimes.Contains(NotifyTime.ThreeDaysBefore) && daysUntil == 3)
                 result.Add(NotifyTime.ThreeDaysBefore);
 
             return result;
