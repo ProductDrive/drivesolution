@@ -87,6 +87,24 @@ namespace BirthdayReminder.Controllers
             //return Ok(new { emailResult, whatsappResult });
         }
 
+        [HttpPost("verify-recaptcha")]
+        public async Task<IActionResult> VerifyRecaptcha(
+            [FromBody] RecaptchaVerificationRequest req,
+            [FromServices] RecaptchaVerifier verifier)
+        {
+            if (req == null || string.IsNullOrWhiteSpace(req.Token))
+                return BadRequest("Token is required");
+
+            if (!verifier.IsConfigured)
+                return StatusCode(503, "reCAPTCHA is not configured");
+
+            var result = await verifier.VerifyAsync(req.Token);
+            if (!result.Valid)
+                return StatusCode(403, new { valid = false, score = result.Score, reason = result.InvalidReason });
+
+            return Ok(new { valid = true, score = result.Score });
+        }
+
         [HttpPost("subscribe")]
         public async Task<IActionResult> Subscribe([FromBody] SubscriptionRequest req)
         {

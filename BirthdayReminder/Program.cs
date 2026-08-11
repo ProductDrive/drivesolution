@@ -33,6 +33,7 @@ builder.AddRedisDistributedCache("cache");
 builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
+builder.Services.AddHttpClient<RecaptchaVerifier>();
 
 // Initialize Firebase Admin SDK for FCM push notifications
 var firebaseCredPath = $"./Jobstore/{FirebaseBirthdayStore.CredentialsPath}";
