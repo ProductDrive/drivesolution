@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - develop
 
     paths-ignore:
       - "**/*.md"
@@ -18,6 +19,7 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.image }}
+
     runs-on: ubuntu-latest
 
     permissions:
@@ -53,6 +55,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # ---------------------------------------------------------
+      # Determine Docker tag
+      #
+      # main    -> latest
+      # develop -> staging
+      # ---------------------------------------------------------
+      - name: Determine image tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
+            echo "tag=staging" >> "$GITHUB_OUTPUT"
+          else
+            echo "Unsupported branch: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
       - name: Extract Docker Metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -61,8 +82,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.image }}
 
           tags: |
-            type=raw,value=latest
-            type=ref,event=branch
+            type=raw,value=${{ steps.tag.outputs.tag }}
             type=sha
 
       - name: Set up Docker Buildx
@@ -70,9 +90,7 @@ jobs:
 
       - name: Build & Push Image
         id: push
-
         uses: docker/build-push-action@v6
-
         with:
           context: .
           file: ${{ matrix.dockerfile }}
