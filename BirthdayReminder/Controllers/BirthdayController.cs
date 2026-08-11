@@ -19,19 +19,39 @@ namespace BirthdayReminder.Controllers
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IDeviceTokenService _deviceTokenService;
         private readonly IPushNotificationService _pushNotificationService;
+        private readonly FirebaseTokenValidator _firebaseTokenValidator;
 
         public BirthdayController(
             NotificationDbContext dbContext,
             IFirebaseStoreService firebaseStoreService,
             IPublishEndpoint publishEndpoint,
             IDeviceTokenService deviceTokenService,
-            IPushNotificationService pushNotificationService)
+            IPushNotificationService pushNotificationService,
+            FirebaseTokenValidator firebaseTokenValidator)
         {
             _dbContext = dbContext;
             _firebaseStoreService = firebaseStoreService;
             _publishEndpoint = publishEndpoint;
             _deviceTokenService = deviceTokenService;
             _pushNotificationService = pushNotificationService;
+            _firebaseTokenValidator = firebaseTokenValidator;
+        }
+
+        /// <summary>
+        /// Extracts the Firebase ID token from the Authorization header and returns
+        /// the verified account UID, or null when missing/invalid/unverified.
+        /// </summary>
+        private async Task<string?> GetVerifiedUidAsync()
+        {
+            var authHeader = Request.Headers.Authorization.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(authHeader))
+                return null;
+
+            string? idToken = null;
+            if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                idToken = authHeader["Bearer ".Length..].Trim();
+
+            return await _firebaseTokenValidator.ValidateAndGetVerifiedUidAsync(idToken);
         }
 
         [HttpGet("reminders")]
@@ -82,6 +102,10 @@ namespace BirthdayReminder.Controllers
             if (req.NotificationTypes == null || req.NotificationTypes.Count == 0)
                 return BadRequest("At least one NotificationType is required");
 
+            var userId = await GetVerifiedUidAsync();
+            if (userId == null)
+                return Unauthorized("A valid, verified account is required");
+
             var subscription = new BirthdaySubscription
             {
                 CelebrantId = req.CelebrantId,
@@ -89,7 +113,7 @@ namespace BirthdayReminder.Controllers
                 BirthDay = req.BirthDay,
                 BirthMonth = req.BirthMonth,
                 NotificationTypes = req.NotificationTypes,
-                UserId = req.UserId,
+                UserId = userId,
                 NotifyTimes = req.NotifyTimes,
                 CreatedAt = DateTime.UtcNow
             };
@@ -141,10 +165,14 @@ namespace BirthdayReminder.Controllers
             if (req == null)
                 return BadRequest("Invalid payload");
 
-            if (string.IsNullOrWhiteSpace(req.UserId) || string.IsNullOrWhiteSpace(req.Token))
-                return BadRequest("UserId and Token are required");
+            if (string.IsNullOrWhiteSpace(req.Token))
+                return BadRequest("Token is required");
 
-            await _deviceTokenService.RegisterTokenAsync(req.UserId, req.Token, req.Platform);
+            var userId = await GetVerifiedUidAsync();
+            if (userId == null)
+                return Unauthorized("A valid, verified account is required");
+
+            await _deviceTokenService.RegisterTokenAsync(userId, req.Token, req.Platform);
             return Ok("Token registered successfully");
         }
 
@@ -154,10 +182,14 @@ namespace BirthdayReminder.Controllers
             if (req == null)
                 return BadRequest("Invalid payload");
 
-            if (string.IsNullOrWhiteSpace(req.UserId) || string.IsNullOrWhiteSpace(req.Token))
-                return BadRequest("UserId and Token are required");
+            if (string.IsNullOrWhiteSpace(req.Token))
+                return BadRequest("Token is required");
 
-            await _deviceTokenService.UnregisterTokenAsync(req.UserId, req.Token);
+            var userId = await GetVerifiedUidAsync();
+            if (userId == null)
+                return Unauthorized("A valid, verified account is required");
+
+            await _deviceTokenService.UnregisterTokenAsync(userId, req.Token);
             return Ok("Token unregistered successfully");
         }
     }
