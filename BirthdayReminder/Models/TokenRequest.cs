@@ -12,4 +12,9 @@ namespace BirthdayReminder.Models
         public string UserId { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
     }
+
+    public class RecaptchaVerificationRequest
+    {
+        public string Token { get; set; } = string.Empty;
+    }
 }

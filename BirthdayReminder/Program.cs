@@ -28,10 +28,12 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IFirebaseStoreService, FirebaseStoreService>();
 builder.Services.AddSingleton<OtpService>();
+builder.Services.AddScoped<FirebaseTokenValidator>();
 builder.AddRedisDistributedCache("cache");
 builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
+builder.Services.AddHttpClient<RecaptchaVerifier>();
 
 // Initialize Firebase Admin SDK for FCM push notifications
 var firebaseCredPath = $"./Jobstore/{FirebaseBirthdayStore.CredentialsPath}";
