@@ -210,5 +210,27 @@ namespace BirthdayReminder.Controllers
             await _deviceTokenService.UnregisterTokenAsync(userId, req.Token);
             return Ok("Token unregistered successfully");
         }
+
+        [HttpPost("request-deletion")]
+        public async Task<IActionResult> RequestDeletion(
+            [FromBody] DeletionRequest req,
+            [FromServices] IDeletionRequestService deletionService)
+        {
+            if (req == null)
+                return BadRequest("Invalid payload");
+
+            if (string.IsNullOrWhiteSpace(req.Email))
+                return BadRequest("Email is required");
+
+            var userId = await GetVerifiedUidAsync();
+            if (userId == null)
+                return Unauthorized("A valid, verified account is required");
+
+            req.UserId = userId;
+
+            await deletionService.SendDeletionRequestEmailAsync(req);
+
+            return Ok("Account deletion request submitted. Our team will process it shortly.");
+        }
     }
 }
